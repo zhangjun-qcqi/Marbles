@@ -38,16 +38,31 @@ struct node{//positon
     void Set(char t,const char b[]);
 	char* begin() { return &Board[0][0]; }
 	char* end() { return &Board[8][8]; }
-	bool operator==(node& b);
+	bool operator==(node& b) {
+		return std::equal(begin(), end(), b.begin()) && Turn == b.Turn;
+	}
 	bool IsSpace(unsigned i, unsigned j) {// note the unsigned wrap
 		return i < 9 && j < 9 && Board[i][j] == ' ';
 	}
 	bool IsMarble(unsigned i, unsigned j) {// note the unsigned wrap
 		return i < 9 && j < 9 && Board[i][j] != ' ';
 	}
+	bool node::Win(){// white wins?
+		return Board[0][0] == 'w' && Board[0][1] == 'w' && Board[0][2] == 'w' && Board[0][3] == 'w'
+			&& Board[1][0] == 'w' && Board[1][1] == 'w' && Board[1][2] == 'w'
+			&& Board[2][0] == 'w' && Board[2][1] == 'w'
+			&& Board[3][0] == 'w';
+	}
+	bool node::Lose(){// white loses?
+		return Board[8][8] == 'b' && Board[8][7] == 'b' && Board[8][6] == 'b' && Board[8][5] == 'b'
+			&& Board[7][8] == 'b' && Board[7][7] == 'b' && Board[7][6] == 'b'
+			&& Board[6][8] == 'b' && Board[6][7] == 'b'
+			&& Board[5][8] == 'b';
+	}
+	int sign(){return Turn == 'w' ? 1 : -1;}
 	bool Quest(char t,const char b[]);
     void Print(); 
-	void Count(int& White, int& Black);
+	int rank();
     void MakeMove(move& m);
 	void UndoMove(move& m);
 	unsigned ListMoves(move Moves[], bool quiet=false);
@@ -58,12 +73,6 @@ void node::Set(char t,const char b[])
 {
     Turn=t;
 	std::copy(b, b + 81, begin());
-}
-
-// ==
-inline bool node::operator==(node& b)
-{
-	return std::equal(begin(), end(), b.begin()) && Turn == b.Turn;
 }
 
 // is input node legal? Set to it if so
@@ -102,18 +111,18 @@ void node::Print()
 }
 
 // evaluate current node
-void node::Count(int& White, int& Black)
+int node::rank()
 {
-	White = 0;
-	Black = 0;
+	int rank = 0;
 	for (unsigned i = 0; i<9; i++) {
 		for (unsigned j = 0; j<9; j++) {
 			if (Board[i][j] == 'b')
-				Black += i+j;
+				rank -= i+j;
 			else if (Board[i][j] == 'w')
-				White += (8-i)+(8-j);
+				rank += (8-i)+(8-j);
 		}
 	}
+	return rank;
 }
 
 // apply the move on current node

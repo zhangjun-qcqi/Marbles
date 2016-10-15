@@ -86,16 +86,13 @@ void Play()
 int CutoffTest(unsigned Depth)
 {
     node& Curr=History[Depth];
-	const int sign = Curr.Turn == 'w'? 1: -1;
-	int White, Black; 
-	Curr.Count(White, Black);
-	if (White == Win)
-		return Win * sign;
-	if (Black == Win)
-		return -Win * sign;
-	if (Depth >= MaxDepth)//exceeding max depth
-		return (White - Black) * sign;//evaluate
-    return INT_MAX;//INT_MAX means no cut off
+	if (Curr.Win())
+		return Win * Curr.sign();
+	if (Curr.Lose())
+		return -Win * Curr.sign();
+	if (Depth < MaxDepth)//not exceeding max depth
+		return INT_MAX;//INT_MAX means no cut off
+	return Curr.rank() * Curr.sign();//evaluate
 }
 
 int AlphaBeta(node& Curr,move& Move)
