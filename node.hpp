@@ -65,7 +65,7 @@ struct node{//positon
 	int rank();
     void MakeMove(move& m);
 	void UndoMove(move& m);
-	unsigned ListMoves(move Moves[], bool quiet=false);
+	unsigned ListMoves(move Moves[], bool quiescent =false);
 };
 
 // set current node using inputs
@@ -142,13 +142,13 @@ void node::UndoMove(move& m)
 }
 
 // list all possible moves of current node
-unsigned node::ListMoves(move Moves[], bool quiet)
+unsigned node::ListMoves(move Moves[], bool quiescent)
 {
     unsigned n=0;
     for(unsigned i=0;i<9;i++){
         for(unsigned j=0;j<9;j++){
             if(Board[i][j]==Turn){
-				if (!quiet) { // only generate these moves for noisy nodes
+				if (!quiescent) { // only in quiescent search
 					// first list the adjacent moves
 					for (unsigned k = 0; k < 6; k++) {
 						const unsigned ides = i + offsets[k][0];

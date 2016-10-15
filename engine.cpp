@@ -9,12 +9,13 @@
 #include"node.hpp"
 #include"move.hpp"
 
-constexpr unsigned MaxDepth=9;//max search depth
-constexpr unsigned QuietDepth = 6;//if depth > this consider node quiet
+constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
+constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
+constexpr unsigned MaxMoves = 250;
 constexpr int Win = 140; // 16 + 15 * 2 + 14 * 3 + 13 * 4
 node History[MaxDepth+1];
 
-int CutoffTest(unsigned Depth);
+int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr);
 int AlphaBeta(node& Node,move& Move);
 int NegaMax(unsigned Depth,int alpha,int beta);
 void Play();
@@ -45,7 +46,7 @@ void Play()
 	Node.Init();
 	Node.Print();
     move Move;
-    move Moves[80];
+    move Moves[MaxMoves];
 
 	while(true){
         unsigned n=Node.ListMoves(Moves);
@@ -83,16 +84,23 @@ void Play()
 	}
 }
 
-int CutoffTest(unsigned Depth)
+int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr)
 {
     node& Curr=History[Depth];
 	if (Curr.Win())
 		return Win * Curr.sign();
 	if (Curr.Lose())
 		return -Win * Curr.sign();
-	if (Depth < MaxDepth)//not exceeding max depth
+	if (Depth <= QuietDepth) {
+		movesNbr = History[Depth].ListMoves(Moves);// normal search
 		return INT_MAX;//INT_MAX means no cut off
-	return Curr.rank() * Curr.sign();//evaluate
+	}
+	if (Depth < MaxDepth) {
+		movesNbr = History[Depth].ListMoves(Moves, true);// quiescent search
+		if(movesNbr != 0) // noisy node
+			return INT_MAX;//INT_MAX means no cut off
+	}
+	return Curr.rank() * Curr.sign();//evaluate quiet node or max depth node
 }
 
 int AlphaBeta(node& Curr,move& Move)
@@ -102,12 +110,11 @@ int AlphaBeta(node& Curr,move& Move)
     History[0] = Curr;
 	constexpr int Depth = 0;
 
-    int Utility = CutoffTest(Depth);
+	move Moves[MaxMoves];//possible moves
+	unsigned movesNbr;
+    int Utility = CutoffTest(Depth, Moves, movesNbr);
     if(Utility!=INT_MAX)
         return Utility;
-    
-	move Moves[250];//possible moves
-	unsigned movesNbr = History[Depth].ListMoves(Moves);
 	std::sort(Moves, Moves + movesNbr);
 	if (History[Depth].Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
@@ -128,13 +135,11 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 {
     if(alpha==Win) return Win;//pre alpha-prune
 
-    int Utility = CutoffTest(Depth);
-    if(Utility!= INT_MAX)
-        return Utility;
-
-	move Moves[250];//possible moves
-	const bool quiet = Depth > QuietDepth;
-    unsigned movesNbr = History[Depth].ListMoves(Moves, quiet);
+	move Moves[MaxMoves];//possible moves
+	unsigned movesNbr;
+	int Utility = CutoffTest(Depth, Moves, movesNbr);
+	if (Utility != INT_MAX)
+		return Utility;
 	std::sort(Moves, Moves + movesNbr);
 	if (History[Depth].Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
