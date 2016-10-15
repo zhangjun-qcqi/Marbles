@@ -18,6 +18,7 @@ int CutoffTest(unsigned Depth);
 int AlphaBeta(node& Node,move& Move);
 int NegaMax(unsigned Depth,int alpha,int beta);
 void Play();
+void Bench();
 
 int main()
 {
@@ -25,10 +26,17 @@ int main()
     //srand(time(0));
 
     //Play();
+	Bench();
+}
+
+void Bench()
+{
 	node Node;
 	Node.Init();
 	move Move;
 	int a = AlphaBeta(Node, Move);
+	printf("%d\n", a);
+	Move.Print();
 }
 
 void Play()
@@ -103,7 +111,6 @@ int AlphaBeta(node& Curr,move& Move)
     
 	move Moves[250];//possible moves
 	unsigned movesNbr = History[Depth].ListMoves(Moves);
-    std::random_shuffle(Moves,Moves+movesNbr);
 	std::sort(Moves, Moves + movesNbr);
 	if (History[Depth].Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
@@ -130,7 +137,6 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 
 	move Moves[250];//possible moves
     unsigned movesNbr = History[Depth].ListMoves(Moves);
-    std::random_shuffle(Moves,Moves+movesNbr);
 	std::sort(Moves, Moves + movesNbr);
 	if (History[Depth].Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
