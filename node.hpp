@@ -45,8 +45,7 @@ struct node{//positon
 	void Count(int& White, int& Black);
     void MakeMove(move& m);
 	void UndoMove(move& m);
-	unsigned ListMoves(move Moves[]);
-
+	unsigned ListMoves(move Moves[], bool quiet=false);
 };
 
 // set current node using inputs
@@ -138,18 +137,20 @@ void node::UndoMove(move& m)
 }
 
 // list all possible moves of current node
-unsigned node::ListMoves(move Moves[])
+unsigned node::ListMoves(move Moves[], bool quiet)
 {
     unsigned n=0;
     for(unsigned i=0;i<9;i++){
         for(unsigned j=0;j<9;j++){
             if(Board[i][j]==Turn){
-				// first list the adjacent moves
-				for (unsigned k = 0; k < 6; k++) {
-					const unsigned ides = i + offsets[k][0];
-					const unsigned jdes = j + offsets[k][1];
-					if (At(ides, jdes) == ' ')
-						Moves[n++].Set(i, j, ides, jdes);
+				if (!quiet) { // only generate these moves for noisy nodes
+					// first list the adjacent moves
+					for (unsigned k = 0; k < 6; k++) {
+						const unsigned ides = i + offsets[k][0];
+						const unsigned jdes = j + offsets[k][1];
+						if (At(ides, jdes) == ' ')
+							Moves[n++].Set(i, j, ides, jdes);
+					}
 				}
 
 				unsigned rear = n; // prepare the queue

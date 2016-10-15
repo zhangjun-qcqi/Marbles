@@ -10,7 +10,7 @@
 #include"move.hpp"
 
 constexpr unsigned MaxDepth=9;//max search depth
-constexpr int Draw = 0;
+constexpr unsigned QuietDepth = 6;//if depth > this consider node quiet
 constexpr int Win = 140; // 16 + 15 * 2 + 14 * 3 + 13 * 4
 node History[MaxDepth+1];
 
@@ -136,7 +136,8 @@ int NegaMax(unsigned Depth,int alpha,int beta)
         return Utility;
 
 	move Moves[250];//possible moves
-    unsigned movesNbr = History[Depth].ListMoves(Moves);
+	const bool quiet = Depth > QuietDepth;
+    unsigned movesNbr = History[Depth].ListMoves(Moves, quiet);
 	std::sort(Moves, Moves + movesNbr);
 	if (History[Depth].Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
