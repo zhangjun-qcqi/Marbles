@@ -10,6 +10,7 @@
 
 struct move{
     unsigned iold,jold,i,j;
+	int rank;
 
     void Set(unsigned row,unsigned col, unsigned row2, unsigned col2);
 	void Set(const char b[]) {
@@ -20,7 +21,7 @@ struct move{
 		return i == b.i && j == b.j && iold == b.iold && jold == b.jold;
 	}
 	bool operator<(const move& b) {
-		return i + b.iold + j + b.jold < b.i + iold + b.j + jold;
+		return rank < b.rank;
 	}
 };
 
@@ -30,6 +31,7 @@ inline void move::Set(unsigned row,unsigned col, unsigned row2, unsigned col2)
 	jold = col;
 	i = row2;
 	j = col2;
+	rank = i + j - iold - jold;
 }
 
 void move::Print()
