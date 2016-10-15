@@ -39,7 +39,12 @@ struct node{//positon
 	char* begin() { return &Board[0][0]; }
 	char* end() { return &Board[8][8]; }
 	bool operator==(node& b);
-	char At(unsigned i, unsigned j);
+	bool IsSpace(unsigned i, unsigned j) {// note the unsigned wrap
+		return i < 9 && j < 9 && Board[i][j] == ' ';
+	}
+	bool IsMarble(unsigned i, unsigned j) {// note the unsigned wrap
+		return i < 9 && j < 9 && Board[i][j] != ' ';
+	}
 	bool Quest(char t,const char b[]);
     void Print(); 
 	void Count(int& White, int& Black);
@@ -59,15 +64,6 @@ void node::Set(char t,const char b[])
 inline bool node::operator==(node& b)
 {
 	return std::equal(begin(), end(), b.begin()) && Turn == b.Turn;
-}
-
-// get board cell with boarder checking
-inline char node::At(unsigned i, unsigned j)
-{
-	if (i>8 || j>8) // note the unsigned wrap
-		return '.'; //illegal position
-	else
-		return Board[i][j];
 }
 
 // is input node legal? Set to it if so
@@ -148,7 +144,7 @@ unsigned node::ListMoves(move Moves[], bool quiet)
 					for (unsigned k = 0; k < 6; k++) {
 						const unsigned ides = i + offsets[k][0];
 						const unsigned jdes = j + offsets[k][1];
-						if (At(ides, jdes) == ' ')
+						if (IsSpace(ides, jdes))
 							Moves[n++].Set(i, j, ides, jdes);
 					}
 				}
@@ -162,7 +158,7 @@ unsigned node::ListMoves(move Moves[], bool quiet)
 					const unsigned jhop = j + offsets[k][1];
 					const unsigned ides = ihop + offsets[k][0];
 					const unsigned jdes = jhop + offsets[k][1];
-					if (At(ihop, jhop) >= 'b' && At(ides, jdes) == ' ') {
+					if (IsMarble(ihop, jhop) && IsSpace(ides, jdes)) {
 						Moves[n++].Set(i, j, ides, jdes);
 						visited[ides][jdes] = true;
 					}
@@ -175,7 +171,7 @@ unsigned node::ListMoves(move Moves[], bool quiet)
 						const unsigned jhop = Moves[rear].j + offsets[k][1];
 						const unsigned ides = ihop + offsets[k][0];
 						const unsigned jdes = jhop + offsets[k][1];
-						if (At(ihop, jhop) >= 'b' && At(ides, jdes) == ' ' && !visited[ides][jdes]) {
+						if (IsMarble(ihop, jhop) && IsSpace(ides, jdes) && !visited[ides][jdes]) {
 							Moves[n++].Set(i, j, ides, jdes);
 							visited[ides][jdes] = true;
 						}
