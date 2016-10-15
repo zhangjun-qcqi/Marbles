@@ -85,11 +85,6 @@ int CutoffTest(unsigned Depth)
 		return Win * sign;
 	if (Black == Win)
 		return -Win * sign;
-	for(unsigned d=Depth;d>=2;){//check history node every two nodes
-        d-=2;
-        if(History[d] == Curr)//repitition
-            return Draw;
-    }
 	if (Depth >= MaxDepth)//exceeding max depth
 		return (White - Black) * sign;//evaluate
     return INT_MAX;//INT_MAX means no cut off
