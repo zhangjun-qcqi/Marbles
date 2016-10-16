@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="node">
+    <DisplayString>{Turn}</DisplayString>
+    <Expand>
+      <Item Name="0">Board,[9]</Item>
+      <Item Name="1">Board+9,[9]</Item>
+      <Item Name="2">Board+18,[9]</Item>
+      <Item Name="3">Board+27,[9]</Item>
+      <Item Name="4">Board+36,[9]</Item>
+      <Item Name="5">Board+45,[9]</Item>
+      <Item Name="6">Board+54,[9]</Item>
+      <Item Name="7">Board+63,[9]</Item>
+      <Item Name="8">Board+72,[9]</Item>
+    </Expand>
+  </Type>
+</AutoVisualizer>
