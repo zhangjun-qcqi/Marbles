@@ -11,7 +11,6 @@
 
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
 constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
-constexpr unsigned MaxMoves = 250;
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 node Curr; // current node; use pairing MakeMove and UndoMove to keep track
 

@@ -6,9 +6,12 @@
 
 #include<cstdio>
 #include<algorithm>
+#include<numeric>
 #include"move.hpp"
 #define NOMINMAX
 #include <windows.h>
+
+constexpr unsigned MaxMoves = 250;
 
 struct node{//positon
     char Board[81];
@@ -19,7 +22,6 @@ struct node{//positon
 	int rank[2];
 
 	constexpr static char marble[2] = { 'b','w' }; // marble[true] = 'w'
-
 	constexpr static char* init = 
 		"bbbb     "
 		"bbb      "
@@ -40,7 +42,7 @@ struct node{//positon
     void Print(); 
     void MakeMove(const move& m);
 	void UndoMove(const move& m);
-	unsigned ListMoves(move Moves[], const bool quiescent =false);
+	unsigned ListMoves(move Moves[MaxMoves], const bool quiescent =false);
 };
 
 // set current node using inputs
@@ -124,9 +126,10 @@ void node::UndoMove(const move& m)
 }
 
 // list all possible moves of current node
-unsigned node::ListMoves(move Moves[], const bool quiescent)
+unsigned node::ListMoves(move Moves[MaxMoves], const bool quiescent)
 {
-    unsigned n=0;
+	unsigned n = 0;
+	move moves[MaxMoves];
 	unsigned start = Turn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
 		unsigned b = Cord[i];
@@ -135,7 +138,7 @@ unsigned node::ListMoves(move Moves[], const bool quiescent)
 			for (unsigned k = 0; k < AdjNbr[b]; k++) {
 				const unsigned dest = Adj[b][k];
 				if (IsSpace(dest))
-					Moves[n++].Set(b, dest);
+					moves[n++].Set(b, dest);
 			}
 		}
 
@@ -147,27 +150,36 @@ unsigned node::ListMoves(move Moves[], const bool quiescent)
 			const unsigned adj = HopAdj[b][k];
 			const unsigned dest = Hop[b][k];
 			if (IsMarble(adj) && IsSpace(dest)) {
-				Moves[n++].Set(b, dest);
+				moves[n++].Set(b, dest);
 				visited[dest] = true;
 			}
 		}
 
 		// last loops all the multiple hop jumps
 		while (rear != n) {
-			const unsigned mid = Moves[rear].dest;
+			const unsigned mid = moves[rear].dest;
 			for (unsigned k = 0; k < HopNbr[mid]; k++) {
 				const unsigned adj = HopAdj[mid][k];
 				const unsigned dest = Hop[mid][k];
 				if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
-					Moves[n++].Set(b, dest);
+					moves[n++].Set(b, dest);
 					visited[dest] = true;
 				}
 			}
 			rear++;
 		}
 	}
-	std::sort(Moves, Moves + n);// ascending
-	if (Turn) // so reverse the moves if white is playing
+	// counting sort
+	unsigned count[33] = {};
+	unsigned* const count2 = count + 16;
+	for (unsigned i = 0; i < n; i++)
+		count2[moves[i].rank]++;
+	std::partial_sum(count, count + 33, count);
+	for (int i = n-1; i >= 0; i--) {
+		count2[moves[i].rank]--;
+		Moves[count2[moves[i].rank]] = moves[i];
+	}
+	if (Turn) // default ascending, so reverse the moves if white is playing
 		std::reverse(Moves, Moves + n);
     return n;
 }
