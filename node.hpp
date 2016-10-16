@@ -12,11 +12,13 @@
 
 struct node{//positon
     char Board[81];
-    char Turn;
+	bool Turn; // in the name of white
 
-	unsigned White[10];
-	unsigned Black[10];
+	unsigned Cord[20]; // cordinates for the marbles; first black then white
+	unsigned Invert[81]; // inverted index for cordinates
 	int rank;
+
+	constexpr static char marble[2] = { 'b','w' }; // marble[true] = 'w'
 
 	constexpr static char* init = 
 		"bbbb     "
@@ -31,9 +33,6 @@ struct node{//positon
 
 	void Init(){Set('w',init);}
     void Set(const char t,const char b[]);
-	bool operator==(const node& b) const {
-		return std::equal(Board, Board+81, b.Board) && Turn == b.Turn;
-	}
 	bool IsSpace(const unsigned b) const {return Board[b] == ' ';}
 	bool IsMarble(const unsigned b) const {return Board[b] != ' ';}
 	bool node::Win() const{// white wins?
@@ -48,31 +47,33 @@ struct node{//positon
 			&& Board[62] == 'b' && Board[61] == 'b'
 			&& Board[53] == 'b';
 	}
-	int sign() const {return Turn == 'w' ? 1 : -1;}
+	int sign() const {return Turn * 2 - 1;} // Let's see what will M$VC do
 	bool Quest(const char t,const char b[]);
     void Print(); 
-    unsigned* MakeMove(const move& m);
-	void UndoMove(const move& m, unsigned* const old);
+    void MakeMove(const move& m);
+	void UndoMove(const move& m);
 	unsigned ListMoves(move Moves[], const bool quiescent =false);
 };
 
 // set current node using inputs
 void node::Set(char t,const char b[])
 {
-    Turn=t;
+	Turn = t == 'w';
 	std::copy(b, b + 81, Board);
-	unsigned white = 0;
+	unsigned white = 10;
 	unsigned black = 0;
 	for (unsigned b = 0; b<81; b++) {
-		if (Board[b] == 'b')
-			Black[black++] = b;
-		else if (Board[b] == 'w')
-			White[white++] = b;
+		if (Board[b] == 'b') {
+			Invert[b] = black;
+			Cord[black++] = b;
+		}
+		else if (Board[b] == 'w') {
+			Invert[b] = white;
+			Cord[white++] = b;
+		}
 	}
 	rank = 0;
-	for (unsigned b : White)
-		rank += Rank[b];
-	for (unsigned b : Black)
+	for (unsigned b : Cord)
 		rank += Rank[b];
 }
 
@@ -112,32 +113,24 @@ void node::Print()
 }
 
 // apply the move on current node
-unsigned* node::MakeMove(const move& m)
+void node::MakeMove(const move& m)
 {
     Board[m.orig]=' ';
-    Board[m.dest]=Turn;
-	unsigned* Marble;
-	if (Turn == 'w') {
-		Turn = 'b';
-		Marble = White;
-	}
-	else {
-		Turn = 'w';
-		Marble = Black;
-	}
+    Board[m.dest]= marble[Turn];
+	Turn = !Turn; // // Let's see what will M$VC do
 	rank += m.rank;
-	unsigned* old = std::find(Marble, Marble + 10, m.orig);
-	*old = m.dest;
-	return old;
+	Cord[Invert[m.orig]] = m.dest;
+	Invert[m.dest] = Invert[m.orig];
 }
 
 // undo the move on current node
-void node::UndoMove(const move& m, unsigned* const old)
+void node::UndoMove(const move& m)
 {
-	Turn = (Turn == 'w') ? 'b' : 'w';
+	Turn = !Turn;
 	rank -= m.rank;
-	*old = m.orig;
-	Board[m.orig] = Turn;
+	Cord[Invert[m.dest]] = m.orig;
+	Invert[m.orig] = Invert[m.dest];
+	Board[m.orig] = marble[Turn];
 	Board[m.dest] = ' ';
 }
 
@@ -145,9 +138,9 @@ void node::UndoMove(const move& m, unsigned* const old)
 unsigned node::ListMoves(move Moves[], const bool quiescent)
 {
     unsigned n=0;
-	unsigned* Marble = (Turn == 'w') ? White : Black;
-	for(unsigned i=0;i<10;i++){
-		unsigned b = Marble[i];
+	unsigned start = Turn * 10;
+	for (unsigned i = start; i < start + 10; i++) {
+		unsigned b = Cord[i];
 		if (!quiescent) { // only in quiescent search
 			// first list the adjacent moves
 			for (unsigned k = 0; k < AdjNbr[b]; k++) {
@@ -183,9 +176,9 @@ unsigned node::ListMoves(move Moves[], const bool quiescent)
 			}
 			rear++;
 		}
-    }
+	}
 	std::sort(Moves, Moves + n);// ascending
-	if (Turn == 'w') // so reverse the moves if white is playing
+	if (Turn) // so reverse the moves if white is playing
 		std::reverse(Moves, Moves + n);
     return n;
 }
