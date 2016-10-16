@@ -12,7 +12,7 @@
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
 constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
 constexpr unsigned MaxMoves = 250;
-constexpr int Win = 60 * 2; // (8 + 7 * 2 + 6 * 3 + 5 * 4) * 2
+constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 node Curr; // current node; use pairing MakeMove and UndoMove to keep track
 
 int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr);
@@ -98,10 +98,10 @@ void Play()
 
 int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr)
 {
-	if (Curr.Win())
-		return Win * Curr.sign();
-	if (Curr.Lose())
-		return -Win * Curr.sign();
+	if (Curr.rank[0] == -Win)
+		return 2 * -Win * Curr.sign();
+	if (Curr.rank[1] == Win)
+		return 2 * Win * Curr.sign();
 	if (Depth <= QuietDepth) {
 		movesNbr = Curr.ListMoves(Moves);// normal search
 		return INT_MAX;//INT_MAX means no cut off
@@ -111,7 +111,8 @@ int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr)
 		if(movesNbr != 0) // noisy node
 			return INT_MAX;//INT_MAX means no cut off
 	}
-	return Curr.rank * Curr.sign();//evaluate quiet node or max depth node
+	//evaluate quiet node or max depth node
+	return (Curr.rank[0] + Curr.rank[1]) * Curr.sign();
 }
 
 int AlphaBeta(node& Node,move& Move)

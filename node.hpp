@@ -16,7 +16,7 @@ struct node{//positon
 
 	unsigned Cord[20]; // cordinates for the marbles; first black then white
 	unsigned Invert[81]; // inverted index for cordinates
-	int rank;
+	int rank[2];
 
 	constexpr static char marble[2] = { 'b','w' }; // marble[true] = 'w'
 
@@ -35,18 +35,6 @@ struct node{//positon
     void Set(const char t,const char b[]);
 	bool IsSpace(const unsigned b) const {return Board[b] == ' ';}
 	bool IsMarble(const unsigned b) const {return Board[b] != ' ';}
-	bool node::Win() const{// white wins?
-		return Board[0] == 'w' && Board[1] == 'w' && Board[2] == 'w' && Board[3] == 'w'
-			&& Board[9] == 'w' && Board[10] == 'w' && Board[11] == 'w'
-			&& Board[18] == 'w' && Board[19] == 'w'
-			&& Board[27] == 'w';
-	}
-	bool node::Lose() const{// white loses?
-		return Board[80] == 'b' && Board[79] == 'b' && Board[78] == 'b' && Board[77] == 'b'
-			&& Board[71] == 'b' && Board[70] == 'b' && Board[69] == 'b'
-			&& Board[62] == 'b' && Board[61] == 'b'
-			&& Board[53] == 'b';
-	}
 	int sign() const {return Turn * 2 - 1;} // Let's see what will M$VC do
 	bool Quest(const char t,const char b[]);
     void Print(); 
@@ -72,9 +60,10 @@ void node::Set(char t,const char b[])
 			Cord[white++] = b;
 		}
 	}
-	rank = 0;
-	for (unsigned b : Cord)
-		rank += Rank[b];
+	rank[0] = 0;
+	rank[1] = 0;
+	for (unsigned c = 0; c < 20; c++)
+		rank[c / 10] += Rank[Cord[c]];
 }
 
 // is input node legal? Set to it if so
@@ -117,8 +106,8 @@ void node::MakeMove(const move& m)
 {
     Board[m.orig]=' ';
     Board[m.dest]= marble[Turn];
+	rank[Turn] += m.rank;
 	Turn = !Turn; // // Let's see what will M$VC do
-	rank += m.rank;
 	Cord[Invert[m.orig]] = m.dest;
 	Invert[m.dest] = Invert[m.orig];
 }
@@ -126,8 +115,8 @@ void node::MakeMove(const move& m)
 // undo the move on current node
 void node::UndoMove(const move& m)
 {
+	rank[Turn] -= m.rank;
 	Turn = !Turn;
-	rank -= m.rank;
 	Cord[Invert[m.dest]] = m.orig;
 	Invert[m.orig] = Invert[m.dest];
 	Board[m.orig] = marble[Turn];
