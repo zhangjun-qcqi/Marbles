@@ -23,6 +23,7 @@ void Bench();
 
 int main()
 {
+	Pre();
     //setbuf(stdout, NULL);
     //srand(time(0));
 
@@ -154,7 +155,7 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 	if (Curr.Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
     for(unsigned i=0;i<movesNbr;i++){
-        Curr.MakeMove(Moves[i]);
+		Curr.MakeMove(Moves[i]);
         int score = -NegaMax(Depth+1,-beta,-alpha);//new utility
 		Curr.UndoMove(Moves[i]);
         if(score>=beta) return beta;//beta-prune,fail-hard

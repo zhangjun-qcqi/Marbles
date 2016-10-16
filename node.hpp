@@ -2,18 +2,20 @@
 // node.hpp
 // 2012.9.8-2016.10.13
 //========================================================================
-#ifndef PSTN_HPP
-#define PSTN_HPP
+#pragma once
 
-#include<cstring>
+#include<cstdio>
 #include<algorithm>
 #include"move.hpp"
 #define NOMINMAX
 #include <windows.h>
 
 struct node{//positon
-    char Board[9][9];
+    char Board[81];
     char Turn;
+
+	unsigned White[10];
+	unsigned Black[10];
 
 	constexpr static char* init = 
 		"bbbb     "
@@ -25,54 +27,48 @@ struct node{//positon
 		"       ww"
 		"      www"
 		"     wwww";
-	constexpr static int offsets[6][2] = {
-		{ 0,-1 },//left
-		{ -1,0 },//up
-		{ 1,-1 },//down left
-		{ -1,1 },//up right
-		{ 1,0 },//down
-		{ 0,1 },//right
-	};
 
 	void Init(){Set('w',init);}
-    void Set(char t,const char b[]);
-	char* begin() { return &Board[0][0]; }
-	char* end() { return &Board[8][8]; }
-	bool operator==(node& b) {
-		return std::equal(begin(), end(), b.begin()) && Turn == b.Turn;
+    void Set(const char t,const char b[]);
+	bool operator==(const node& b) const {
+		return std::equal(Board, Board+81, b.Board) && Turn == b.Turn;
 	}
-	bool IsSpace(unsigned i, unsigned j) {// note the unsigned wrap
-		return i < 9 && j < 9 && Board[i][j] == ' ';
+	bool IsSpace(const unsigned b) const {return Board[b] == ' ';}
+	bool IsMarble(const unsigned b) const {return Board[b] != ' ';}
+	bool node::Win() const{// white wins?
+		return Board[0] == 'w' && Board[1] == 'w' && Board[2] == 'w' && Board[3] == 'w'
+			&& Board[9] == 'w' && Board[10] == 'w' && Board[11] == 'w'
+			&& Board[18] == 'w' && Board[19] == 'w'
+			&& Board[27] == 'w';
 	}
-	bool IsMarble(unsigned i, unsigned j) {// note the unsigned wrap
-		return i < 9 && j < 9 && Board[i][j] != ' ';
+	bool node::Lose() const{// white loses?
+		return Board[80] == 'b' && Board[79] == 'b' && Board[78] == 'b' && Board[77] == 'b'
+			&& Board[71] == 'b' && Board[70] == 'b' && Board[69] == 'b'
+			&& Board[62] == 'b' && Board[61] == 'b'
+			&& Board[53] == 'b';
 	}
-	bool node::Win(){// white wins?
-		return Board[0][0] == 'w' && Board[0][1] == 'w' && Board[0][2] == 'w' && Board[0][3] == 'w'
-			&& Board[1][0] == 'w' && Board[1][1] == 'w' && Board[1][2] == 'w'
-			&& Board[2][0] == 'w' && Board[2][1] == 'w'
-			&& Board[3][0] == 'w';
-	}
-	bool node::Lose(){// white loses?
-		return Board[8][8] == 'b' && Board[8][7] == 'b' && Board[8][6] == 'b' && Board[8][5] == 'b'
-			&& Board[7][8] == 'b' && Board[7][7] == 'b' && Board[7][6] == 'b'
-			&& Board[6][8] == 'b' && Board[6][7] == 'b'
-			&& Board[5][8] == 'b';
-	}
-	int sign(){return Turn == 'w' ? 1 : -1;}
-	bool Quest(char t,const char b[]);
+	int sign() const {return Turn == 'w' ? 1 : -1;}
+	bool Quest(const char t,const char b[]);
     void Print(); 
-	int rank();
-    void MakeMove(move& m);
-	void UndoMove(move& m);
-	unsigned ListMoves(move Moves[], bool quiescent =false);
+	int rank() const;
+    void MakeMove(const move& m);
+	void UndoMove(const move& m);
+	unsigned ListMoves(move Moves[], const bool quiescent =false);
 };
 
 // set current node using inputs
 void node::Set(char t,const char b[])
 {
     Turn=t;
-	std::copy(b, b + 81, begin());
+	std::copy(b, b + 81, Board);
+	unsigned white = 0;
+	unsigned black = 0;
+	for (unsigned b = 0; b<81; b++) {
+		if (Board[b] == 'b')
+			Black[black++] = b;
+		else if (Board[b] == 'w')
+			White[white++] = b;
+	}
 }
 
 // is input node legal? Set to it if so
@@ -80,9 +76,9 @@ bool node::Quest(char t,const char bd[])
 {
     if(t!='b'&&t!='w')
         return false;
-    unsigned w = std::count(begin(), end(), 'w');
-    unsigned b = std::count(begin(), end(), 'b');
-    unsigned s = std::count(begin(), end(), ' ');
+    unsigned w = std::count(Board, Board + 81, 'w');
+    unsigned b = std::count(Board, Board + 81, 'b');
+    unsigned s = std::count(Board, Board + 81, ' ');
     if(w!=10||b!=10||w+b+s!=81)
         return false;
     Set(t,bd);
@@ -96,13 +92,13 @@ void node::Print()
     for(int i=0;i<17;i++){
 		for (int j = 0; j < std::max(8 - i,i-8); j++) printf("  ");
 		for (int j = std::max(0,i-8); j <= std::min(i,8); j++) {
-			switch (Board[i - j][j]) {
+			switch (Board[(i - j)*9+j]) {
 			//case 'w': printf("\033[32m"); break;
 			case 'w': SetConsoleTextAttribute(hConsole, 10); break;
 			//case 'b': printf("\033[31m"); break;
 			case 'b': SetConsoleTextAttribute(hConsole, 12); break;
 			}
-			printf("%d%d  ", i - j, j);
+			printf("%02d  ", (i - j) * 9 + j);
 			//printf("\033[37m");
 			SetConsoleTextAttribute(hConsole, 15);
 		}
@@ -111,86 +107,88 @@ void node::Print()
 }
 
 // evaluate current node
-int node::rank()
+int node::rank() const
 {
 	int rank = 0;
-	for (unsigned i = 0; i<9; i++) {
-		for (unsigned j = 0; j<9; j++) {
-			if (Board[i][j] == 'b')
-				rank -= i+j;
-			else if (Board[i][j] == 'w')
-				rank += (8-i)+(8-j);
-		}
-	}
+	for (unsigned b : White)
+		rank += 16-Rank[b];
+	for (unsigned b : Black)
+		rank -= Rank[b];
 	return rank;
 }
 
 // apply the move on current node
-void node::MakeMove(move& m)
+void node::MakeMove(const move& m)
 {
-    Board[m.iold][m.jold]=' ';
-    Board[m.i][m.j]=Turn;
-    Turn=(Turn=='w')?'b':'w';
+    Board[m.orig]=' ';
+    Board[m.dest]=Turn;
+	if (Turn == 'w') {
+		Turn = 'b';
+		*std::find(White, White + 10, m.orig) = m.dest;
+	}
+	else {
+		Turn = 'w';
+		*std::find(Black, Black + 10, m.orig) = m.dest;
+	}
 }
 
 // undo the move on current node
-void node::UndoMove(move& m)
+void node::UndoMove(const move& m)
 {
-	Turn = (Turn == 'w') ? 'b' : 'w';
-	Board[m.iold][m.jold] = Turn;
-	Board[m.i][m.j] = ' ';
+	if (Turn == 'w') {
+		Turn = 'b';
+		*std::find(Black, Black + 10, m.dest) = m.orig;
+	}
+	else {
+		Turn = 'w';
+		*std::find(White, White + 10, m.dest) = m.orig;
+	}
+	Board[m.orig] = Turn;
+	Board[m.dest] = ' ';
 }
 
 // list all possible moves of current node
-unsigned node::ListMoves(move Moves[], bool quiescent)
+unsigned node::ListMoves(move Moves[], const bool quiescent)
 {
     unsigned n=0;
-    for(unsigned i=0;i<9;i++){
-        for(unsigned j=0;j<9;j++){
-            if(Board[i][j]==Turn){
-				if (!quiescent) { // only in quiescent search
-					// first list the adjacent moves
-					for (unsigned k = 0; k < 6; k++) {
-						const unsigned ides = i + offsets[k][0];
-						const unsigned jdes = j + offsets[k][1];
-						if (IsSpace(ides, jdes))
-							Moves[n++].Set(i, j, ides, jdes);
-					}
-				}
+	unsigned* Marble = (Turn == 'w') ? White : Black;
+	for(unsigned i=0;i<10;i++){
+		unsigned b = Marble[i];
+		if (!quiescent) { // only in quiescent search
+			// first list the adjacent moves
+			for (unsigned k = 0; k < AdjNbr[b]; k++) {
+				const unsigned dest = Adj[b][k];
+				if (IsSpace(dest))
+					Moves[n++].Set(b, dest);
+			}
+		}
 
-				unsigned rear = n; // prepare the queue
-				bool visited[9][9] = {};
+		unsigned rear = n; // prepare the queue
+		bool visited[81] = {};
 
-				// then list the one hop jumps
-				for (unsigned k = 0; k < 6; k++) {
-					const unsigned ihop = i + offsets[k][0];
-					const unsigned jhop = j + offsets[k][1];
-					const unsigned ides = ihop + offsets[k][0];
-					const unsigned jdes = jhop + offsets[k][1];
-					if (IsMarble(ihop, jhop) && IsSpace(ides, jdes)) {
-						Moves[n++].Set(i, j, ides, jdes);
-						visited[ides][jdes] = true;
-					}
-				}
+		// then list the one hop jumps
+		for (unsigned k = 0; k < HopNbr[b]; k++) {
+			const unsigned adj = HopAdj[b][k];
+			const unsigned dest = Hop[b][k];
+			if (IsMarble(adj) && IsSpace(dest)) {
+				Moves[n++].Set(b, dest);
+				visited[dest] = true;
+			}
+		}
 
-				// last loops all the multiple hop jumps
-				while (rear != n) {
-					for (unsigned k = 0; k < 6; k++) {
-						const unsigned ihop = Moves[rear].i + offsets[k][0];
-						const unsigned jhop = Moves[rear].j + offsets[k][1];
-						const unsigned ides = ihop + offsets[k][0];
-						const unsigned jdes = jhop + offsets[k][1];
-						if (IsMarble(ihop, jhop) && IsSpace(ides, jdes) && !visited[ides][jdes]) {
-							Moves[n++].Set(i, j, ides, jdes);
-							visited[ides][jdes] = true;
-						}
-					}
-					rear++;
+		// last loops all the multiple hop jumps
+		while (rear != n) {
+			const unsigned mid = Moves[rear].dest;
+			for (unsigned k = 0; k < HopNbr[mid]; k++) {
+				const unsigned adj = HopAdj[mid][k];
+				const unsigned dest = Hop[mid][k];
+				if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
+					Moves[n++].Set(b, dest);
+					visited[dest] = true;
 				}
-            }
-        }
+			}
+			rear++;
+		}
     }
     return n;
 }
-
-#endif // NODE_HPP
