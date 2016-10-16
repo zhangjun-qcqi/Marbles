@@ -51,8 +51,8 @@ struct node{//positon
 	bool Quest(const char t,const char b[]);
     void Print(); 
 	int rank() const;
-    void MakeMove(const move& m);
-	void UndoMove(const move& m);
+    unsigned* MakeMove(const move& m);
+	void UndoMove(const move& m, unsigned* const old);
 	unsigned ListMoves(move Moves[], const bool quiescent =false);
 };
 
@@ -118,31 +118,29 @@ int node::rank() const
 }
 
 // apply the move on current node
-void node::MakeMove(const move& m)
+unsigned* node::MakeMove(const move& m)
 {
     Board[m.orig]=' ';
     Board[m.dest]=Turn;
+	unsigned* Marble;
 	if (Turn == 'w') {
 		Turn = 'b';
-		*std::find(White, White + 10, m.orig) = m.dest;
+		Marble = White;
 	}
 	else {
 		Turn = 'w';
-		*std::find(Black, Black + 10, m.orig) = m.dest;
+		Marble = Black;
 	}
+	unsigned* old = std::find(Marble, Marble + 10, m.orig);
+	*old = m.dest;
+	return old;
 }
 
 // undo the move on current node
-void node::UndoMove(const move& m)
+void node::UndoMove(const move& m, unsigned* const old)
 {
-	if (Turn == 'w') {
-		Turn = 'b';
-		*std::find(Black, Black + 10, m.dest) = m.orig;
-	}
-	else {
-		Turn = 'w';
-		*std::find(White, White + 10, m.dest) = m.orig;
-	}
+	Turn = (Turn == 'w') ? 'b' : 'w';
+	*old = m.orig;
 	Board[m.orig] = Turn;
 	Board[m.dest] = ' ';
 }

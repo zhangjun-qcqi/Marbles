@@ -130,9 +130,9 @@ int AlphaBeta(node& Node,move& Move)
 	if (Curr.Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
     for(unsigned i=0;i<movesNbr;i++){
-		Curr.MakeMove(Moves[i]);
+		unsigned* const old = Curr.MakeMove(Moves[i]);
         int score = -NegaMax(Depth + 1,-beta,-alpha);//new utility
-		Curr.UndoMove(Moves[i]);
+		Curr.UndoMove(Moves[i], old);
         if(score>alpha){
             alpha=score;
             Move=Moves[i];
@@ -155,9 +155,9 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 	if (Curr.Turn == 'b') // reverse the moves if black is playing
 		std::reverse(Moves, Moves + movesNbr);
     for(unsigned i=0;i<movesNbr;i++){
-		Curr.MakeMove(Moves[i]);
+		unsigned* const old = Curr.MakeMove(Moves[i]);
         int score = -NegaMax(Depth+1,-beta,-alpha);//new utility
-		Curr.UndoMove(Moves[i]);
+		Curr.UndoMove(Moves[i], old);
         if(score>=beta) return beta;//beta-prune,fail-hard
         if(score>alpha) alpha=score;
 	}
