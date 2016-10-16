@@ -16,6 +16,7 @@ struct node{//positon
 
 	unsigned White[10];
 	unsigned Black[10];
+	int rank;
 
 	constexpr static char* init = 
 		"bbbb     "
@@ -50,7 +51,6 @@ struct node{//positon
 	int sign() const {return Turn == 'w' ? 1 : -1;}
 	bool Quest(const char t,const char b[]);
     void Print(); 
-	int rank() const;
     unsigned* MakeMove(const move& m);
 	void UndoMove(const move& m, unsigned* const old);
 	unsigned ListMoves(move Moves[], const bool quiescent =false);
@@ -69,6 +69,11 @@ void node::Set(char t,const char b[])
 		else if (Board[b] == 'w')
 			White[white++] = b;
 	}
+	rank = 0;
+	for (unsigned b : White)
+		rank += Rank[b];
+	for (unsigned b : Black)
+		rank += Rank[b];
 }
 
 // is input node legal? Set to it if so
@@ -106,17 +111,6 @@ void node::Print()
     }
 }
 
-// evaluate current node
-int node::rank() const
-{
-	int rank = 0;
-	for (unsigned b : White)
-		rank += 16-Rank[b];
-	for (unsigned b : Black)
-		rank -= Rank[b];
-	return rank;
-}
-
 // apply the move on current node
 unsigned* node::MakeMove(const move& m)
 {
@@ -131,6 +125,7 @@ unsigned* node::MakeMove(const move& m)
 		Turn = 'w';
 		Marble = Black;
 	}
+	rank += m.rank;
 	unsigned* old = std::find(Marble, Marble + 10, m.orig);
 	*old = m.dest;
 	return old;
@@ -140,6 +135,7 @@ unsigned* node::MakeMove(const move& m)
 void node::UndoMove(const move& m, unsigned* const old)
 {
 	Turn = (Turn == 'w') ? 'b' : 'w';
+	rank -= m.rank;
 	*old = m.orig;
 	Board[m.orig] = Turn;
 	Board[m.dest] = ' ';
@@ -188,5 +184,8 @@ unsigned node::ListMoves(move Moves[], const bool quiescent)
 			rear++;
 		}
     }
+	std::sort(Moves, Moves + n);// ascending
+	if (Turn == 'w') // so reverse the moves if white is playing
+		std::reverse(Moves, Moves + n);
     return n;
 }

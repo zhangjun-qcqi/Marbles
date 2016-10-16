@@ -12,7 +12,7 @@
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
 constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
 constexpr unsigned MaxMoves = 250;
-constexpr int Win = 140; // 16 + 15 * 2 + 14 * 3 + 13 * 4
+constexpr int Win = 60 * 2; // (8 + 7 * 2 + 6 * 3 + 5 * 4) * 2
 node Curr; // current node; use pairing MakeMove and UndoMove to keep track
 
 int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr);
@@ -111,7 +111,7 @@ int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned& movesNbr)
 		if(movesNbr != 0) // noisy node
 			return INT_MAX;//INT_MAX means no cut off
 	}
-	return Curr.rank() * Curr.sign();//evaluate quiet node or max depth node
+	return Curr.rank * Curr.sign();//evaluate quiet node or max depth node
 }
 
 int AlphaBeta(node& Node,move& Move)
@@ -126,9 +126,6 @@ int AlphaBeta(node& Node,move& Move)
     int Utility = CutoffTest(Depth, Moves, movesNbr);
     if(Utility!=INT_MAX)
         return Utility;
-	std::sort(Moves, Moves + movesNbr);
-	if (Curr.Turn == 'b') // reverse the moves if black is playing
-		std::reverse(Moves, Moves + movesNbr);
     for(unsigned i=0;i<movesNbr;i++){
 		unsigned* const old = Curr.MakeMove(Moves[i]);
         int score = -NegaMax(Depth + 1,-beta,-alpha);//new utility
@@ -151,9 +148,6 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 	int Utility = CutoffTest(Depth, Moves, movesNbr);
 	if (Utility != INT_MAX)
 		return Utility;
-	std::sort(Moves, Moves + movesNbr);
-	if (Curr.Turn == 'b') // reverse the moves if black is playing
-		std::reverse(Moves, Moves + movesNbr);
     for(unsigned i=0;i<movesNbr;i++){
 		unsigned* const old = Curr.MakeMove(Moves[i]);
         int score = -NegaMax(Depth+1,-beta,-alpha);//new utility

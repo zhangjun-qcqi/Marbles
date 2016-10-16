@@ -27,7 +27,7 @@ void Pre()
 	for (unsigned b = 0; b < 81; b++) {
 		const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
 		const unsigned j = b % 9;
-		Rank[b] = i + j;
+		Rank[b] = 8 - (i + j);// based on white's view; middle line is 0
 		for (unsigned k = 0; k < 6; k++) {
 			const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
 			const unsigned j2 = j + offsets[k][1];
