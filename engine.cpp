@@ -32,8 +32,19 @@ int main()
 
 void Bench()
 {
+	constexpr char * hard =
+		"bbbb     "
+		" bb      "
+		"         "
+		" bb      "
+		"  bbww   "
+		"      ww "
+		"       w "
+		"      ww "
+		"     w ww";
 	node Node;
-	Node.Init();
+	Node.Set('b',hard);
+	Node.Print();
 	move Move;
 	int a = AlphaBeta(Node, Move);
 	printf("%d\n", a);
