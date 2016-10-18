@@ -7,11 +7,14 @@
 #include<cstdio>
 
 int Rank[81];
-unsigned AdjNbr[81];
-unsigned Adj[81][6];
-unsigned HopAdj[81][6]; // the adj that can hop
-unsigned HopNbr[81];
-unsigned Hop[81][6];
+struct {
+	unsigned AdjNbr;
+	unsigned Adj[6];
+	unsigned HopNbr;
+	unsigned HopAdj[6]; // the adj that can hop
+	unsigned Hop[6];
+} Net[81];
+
 
 // pre-compute the globals
 void Pre()
@@ -32,12 +35,12 @@ void Pre()
 			const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
 			const unsigned j2 = j + offsets[k][1];
 			if (i2 < 9 && j2 < 9) {
-				Adj[b][AdjNbr[b]++] = i2 * 9 + j2;
+				Net[b].Adj[Net[b].AdjNbr++] = i2 * 9 + j2;
 				const unsigned i3 = i2 + offsets[k][0];
 				const unsigned j3 = j2 + offsets[k][1];
 				if (i3 < 9 && j3 < 9) {
-					HopAdj[b][HopNbr[b]] = i2 * 9 + j2;
-					Hop[b][HopNbr[b]++] = i3 * 9 + j3;
+					Net[b].HopAdj[Net[b].HopNbr] = i2 * 9 + j2;
+					Net[b].Hop[Net[b].HopNbr++] = i3 * 9 + j3;
 				}
 			}
 		}

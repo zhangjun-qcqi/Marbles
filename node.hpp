@@ -133,8 +133,8 @@ unsigned node::ListMoves(move Moves[MaxMoves], unsigned Order[MaxMoves],
 		unsigned b = Cord[i];
 		if (!quiescent) { // only in quiescent search
 			// first list the adjacent moves
-			for (unsigned k = 0; k < AdjNbr[b]; k++) {
-				const unsigned dest = Adj[b][k];
+			for (unsigned k = 0; k < Net[b].AdjNbr; k++) {
+				const unsigned dest = Net[b].Adj[k];
 				if (IsSpace(dest))
 					Moves[n++].Set(b, dest);
 			}
@@ -144,9 +144,9 @@ unsigned node::ListMoves(move Moves[MaxMoves], unsigned Order[MaxMoves],
 		bool visited[81] = {};
 
 		// then list the one hop jumps
-		for (unsigned k = 0; k < HopNbr[b]; k++) {
-			const unsigned adj = HopAdj[b][k];
-			const unsigned dest = Hop[b][k];
+		for (unsigned k = 0; k < Net[b].HopNbr; k++) {
+			const unsigned adj = Net[b].HopAdj[k];
+			const unsigned dest = Net[b].Hop[k];
 			if (IsMarble(adj) && IsSpace(dest)) {
 				Moves[n++].Set(b, dest);
 				visited[dest] = true;
@@ -156,9 +156,9 @@ unsigned node::ListMoves(move Moves[MaxMoves], unsigned Order[MaxMoves],
 		// last loops all the multiple hop jumps
 		while (rear != n) {
 			const unsigned mid = Moves[rear].dest;
-			for (unsigned k = 0; k < HopNbr[mid]; k++) {
-				const unsigned adj = HopAdj[mid][k];
-				const unsigned dest = Hop[mid][k];
+			for (unsigned k = 0; k < Net[mid].HopNbr; k++) {
+				const unsigned adj = Net[mid].HopAdj[k];
+				const unsigned dest = Net[mid].Hop[k];
 				if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
 					Moves[n++].Set(b, dest);
 					visited[dest] = true;
