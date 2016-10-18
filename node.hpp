@@ -14,14 +14,11 @@
 constexpr unsigned MaxMoves = 240;
 
 struct node{//positon
-    char Board[81];
-	bool Turn; // in the name of white
-
+    unsigned Board[81];// also the inverted index for cordinates
 	unsigned Cord[20]; // cordinates for the marbles; first black then white
-	unsigned Invert[81]; // inverted index for cordinates
+	bool Turn; // in the name of white
 	int rank[2];
 
-	constexpr static char marble[2] = { 'b','w' }; // marble[true] = 'w'
 	constexpr static char* init = 
 		"bbbb     "
 		"bbb      "
@@ -34,11 +31,11 @@ struct node{//positon
 		"     wwww";
 
 	void Init(){Set('w',init);}
-    void Set(const char t,const char b[]);
+    void Set(const char turn,const char board[]);
 	bool IsSpace(const unsigned b) const {return Board[b] == ' ';}
 	bool IsMarble(const unsigned b) const {return Board[b] != ' ';}
 	int sign() const {return Turn * 2 - 1;} // Let's see what will M$VC do
-	bool Quest(const char t,const char b[]);
+	bool Quest(const char turn,const char board[]);
     void Print(); 
     void MakeMove(const move& m);
 	void UndoMove(const move& m);
@@ -47,39 +44,40 @@ struct node{//positon
 };
 
 // set current node using inputs
-void node::Set(char t,const char b[])
+void node::Set(const char turn, const char board[])
 {
-	Turn = t == 'w';
-	std::copy(b, b + 81, Board);
+	Turn = turn == 'w';
 	unsigned white = 10;
 	unsigned black = 0;
-	for (unsigned b = 0; b<81; b++) {
-		if (Board[b] == 'b') {
-			Invert[b] = black;
-			Cord[black++] = b;
-		}
-		else if (Board[b] == 'w') {
-			Invert[b] = white;
-			Cord[white++] = b;
-		}
-	}
 	rank[0] = 0;
 	rank[1] = 0;
-	for (unsigned c = 0; c < 20; c++)
-		rank[c / 10] += Rank[Cord[c]];
+	for (unsigned b = 0; b<81; b++) {
+		if (board[b] == 'b') {
+			Board[b] = black;
+			Cord[black++] = b;
+			rank[0] += Rank[b];
+		}
+		else if (board[b] == 'w') {
+			Board[b] = white;
+			Cord[white++] = b;
+			rank[1] += Rank[b];
+		}
+		else
+			Board[b] = ' ';
+	}
 }
 
 // is input node legal? Set to it if so
-bool node::Quest(char t,const char bd[])
+bool node::Quest(const char turn, const char board[])
 {
-    if(t!='b'&&t!='w')
-        return false;
-    unsigned w = std::count(Board, Board + 81, 'w');
-    unsigned b = std::count(Board, Board + 81, 'b');
-    unsigned s = std::count(Board, Board + 81, ' ');
+	if (turn != 'b'&&turn != 'w')
+		return false;
+    unsigned w = std::count(board, board + 81, 'w');
+    unsigned b = std::count(board, board + 81, 'b');
+    unsigned s = std::count(board, board + 81, ' ');
     if(w!=10||b!=10||w+b+s!=81)
         return false;
-    Set(t,bd);
+    Set(turn,board);
     return true;
 }
 
@@ -90,12 +88,13 @@ void node::Print()
     for(int i=0;i<17;i++){
 		for (int j = 0; j < std::max(8 - i,i-8); j++) printf("  ");
 		for (int j = std::max(0,i-8); j <= std::min(i,8); j++) {
-			switch (Board[(i - j)*9+j]) {
+			unsigned b = Board[(i - j) * 9 + j];
+			if(b<10)
 			//case 'w': printf("\033[32m"); break;
-			case 'w': SetConsoleTextAttribute(hConsole, 10); break;
+				SetConsoleTextAttribute(hConsole, 10);
+			else if(b<20)
 			//case 'b': printf("\033[31m"); break;
-			case 'b': SetConsoleTextAttribute(hConsole, 12); break;
-			}
+				SetConsoleTextAttribute(hConsole, 12);
 			printf("%02d  ", (i - j) * 9 + j);
 			//printf("\033[37m");
 			SetConsoleTextAttribute(hConsole, 15);
@@ -107,12 +106,11 @@ void node::Print()
 // apply the move on current node
 void node::MakeMove(const move& m)
 {
-    Board[m.orig]=' ';
-    Board[m.dest]= marble[Turn];
 	rank[Turn] += m.rank;
-	Turn = !Turn; // // Let's see what will M$VC do
-	Cord[Invert[m.orig]] = m.dest;
-	Invert[m.dest] = Invert[m.orig];
+	Turn = !Turn;
+	Cord[Board[m.orig]] = m.dest;
+	Board[m.dest] = Board[m.orig];
+	Board[m.orig] = ' ';
 }
 
 // undo the move on current node
@@ -120,9 +118,8 @@ void node::UndoMove(const move& m)
 {
 	rank[Turn] -= m.rank;
 	Turn = !Turn;
-	Cord[Invert[m.dest]] = m.orig;
-	Invert[m.orig] = Invert[m.dest];
-	Board[m.orig] = marble[Turn];
+	Cord[Board[m.dest]] = m.orig;
+	Board[m.orig] = Board[m.dest];
 	Board[m.dest] = ' ';
 }
 
