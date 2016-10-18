@@ -177,5 +177,7 @@ unsigned node::ListMoves(move Moves[MaxMoves], unsigned Order[MaxMoves],
 			Order[--count2[Moves[i].rank]] = i;
 	if (Turn) // default ascending, so reverse the moves if white is playing
 		std::reverse(Order, Order + n);
+	if (quiescent) // drop <2 moves in quiescent search
+		n = Turn ? n - count2[2] : count2[-1];// drop >-2 moves for black 
     return n;
 }
