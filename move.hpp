@@ -48,7 +48,7 @@ void Pre()
 }
 
 struct move{
-    unsigned orig,dest;
+	unsigned orig,dest;
 	int rank;
 
 	void Set(const unsigned o, const unsigned d) {

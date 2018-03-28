@@ -24,10 +24,10 @@ void Bench();
 int main()
 {
 	Pre();
-    //setbuf(stdout, NULL);
-    //srand(time(0));
+	//setbuf(stdout, NULL);
+	//srand(time(0));
 
-    //Play();
+	//Play();
 	Bench();
 }
 
@@ -54,45 +54,45 @@ void Bench()
 
 void Play()
 {
-    node Node;
+	node Node;
 	Node.Init();
 	Node.Print();
-    move Move;
-    move Moves[MaxMoves];
+	move Move;
+	move Moves[MaxMoves];
 	unsigned Order[MaxMoves];
 
 	while(true){
 		unsigned n = Node.ListMoves(Moves, Order);
-        char buf[20];
-        int ch;
-        while(fgets(buf,20,stdin)!=0){
-            size_t len = strlen(buf);
-            if(buf[len-1]!='\n'){//current line not read all, dicard them
-                while ((ch = getc(stdin)) != EOF && ch != '\n');
-                continue;
-            }
-            else if(len==5){
-                if(strcmp(buf,"quit\n")==0)//quit
-                    return;
-                if(strcmp(buf,"init\n")==0)//AI plays first
-                    break;
-                Move.Set(buf);
-                if(Moves+n!=std::find(Moves,Moves+n,Move)){
-                    Node.MakeMove(Move);
-                    break;
-                }
-            }
-            else if(len==19 && buf[1]==':'){//Board
-                if(Node.Quest(buf[0],buf+2)){
-                    break;
-                }
-            }
-        }
+		char buf[20];
+		int ch;
+		while(fgets(buf,20,stdin)!=0){
+			size_t len = strlen(buf);
+			if(buf[len-1]!='\n'){//current line not read all, dicard them
+				while ((ch = getc(stdin)) != EOF && ch != '\n');
+				continue;
+			}
+			else if(len==5){
+				if(strcmp(buf,"quit\n")==0)//quit
+					return;
+				if(strcmp(buf,"init\n")==0)//AI plays first
+					break;
+				Move.Set(buf);
+				if(Moves+n!=std::find(Moves,Moves+n,Move)){
+					Node.MakeMove(Move);
+					break;
+				}
+			}
+			else if(len==19 && buf[1]==':'){//Board
+				if(Node.Quest(buf[0],buf+2)){
+					break;
+				}
+			}
+		}
 		printf("thinking...\n");
-        int Utility = AlphaBeta(Node,Move);
+		int Utility = AlphaBeta(Node,Move);
 		printf("%d\n", Utility);
-        Move.Print();
-        Node.MakeMove(Move);
+		Move.Print();
+		Node.MakeMove(Move);
 		Node.Print();
 	}
 }
@@ -119,33 +119,33 @@ int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned Order[MaxMoves],
 
 int AlphaBeta(node& Node,move& Move)
 {
-    int alpha = -INT_MAX;
-    int beta = INT_MAX;
-    Curr = Node;
+	int alpha = -INT_MAX;
+	int beta = INT_MAX;
+	Curr = Node;
 	constexpr int Depth = 0;
 
 	move Moves[MaxMoves];//possible moves
 	unsigned Order[MaxMoves];
 	unsigned movesNbr;
-    int Utility = CutoffTest(Depth, Moves, Order, movesNbr);
-    if(Utility!=INT_MAX)
-        return Utility;
-    for(unsigned i=0;i<movesNbr;i++){
+	int Utility = CutoffTest(Depth, Moves, Order, movesNbr);
+	if(Utility!=INT_MAX)
+		return Utility;
+	for(unsigned i=0;i<movesNbr;i++){
 		Curr.MakeMove(Moves[Order[i]]);
-        int score = -NegaMax(Depth + 1,-beta,-alpha);//new utility
+		int score = -NegaMax(Depth + 1,-beta,-alpha);//new utility
 		Curr.UndoMove(Moves[Order[i]]);
-        if(score>alpha){
-            alpha=score;
-            Move=Moves[Order[i]];
-        }
+		if(score>alpha){
+			alpha=score;
+			Move=Moves[Order[i]];
+		}
 		
-    }
-    return alpha;
+	}
+	return alpha;
 }
 
 int NegaMax(unsigned Depth,int alpha,int beta)
 {
-    if(alpha==Win) return Win;//pre alpha-prune
+	if(alpha==Win) return Win;//pre alpha-prune
 
 	move Moves[MaxMoves];//possible moves
 	unsigned Order[MaxMoves];
@@ -153,12 +153,12 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 	int Utility = CutoffTest(Depth, Moves, Order, movesNbr);
 	if (Utility != INT_MAX)
 		return Utility;
-    for(unsigned i=0;i<movesNbr;i++){
+	for(unsigned i=0;i<movesNbr;i++){
 		Curr.MakeMove(Moves[Order[i]]);
-        int score = -NegaMax(Depth+1,-beta,-alpha);//new utility
+		int score = -NegaMax(Depth+1,-beta,-alpha);//new utility
 		Curr.UndoMove(Moves[Order[i]]);
-        if(score>=beta) return beta;//beta-prune,fail-hard
-        if(score>alpha) alpha=score;
+		if(score>=beta) return beta;//beta-prune,fail-hard
+		if(score>alpha) alpha=score;
 	}
-    return alpha;
+	return alpha;
 }

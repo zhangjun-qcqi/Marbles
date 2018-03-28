@@ -14,7 +14,7 @@
 constexpr unsigned MaxMoves = 240;
 
 struct node{//positon
-    unsigned Board[81];// also the inverted index for cordinates
+	unsigned Board[81];// also the inverted index for cordinates
 	unsigned Cord[20]; // cordinates for the marbles; first black then white
 	bool Turn; // in the name of white
 	int rank[2];
@@ -31,13 +31,13 @@ struct node{//positon
 		"     wwww";
 
 	void Init(){Set('w',init);}
-    void Set(const char turn,const char board[]);
+	void Set(const char turn,const char board[]);
 	bool IsSpace(const unsigned b) const {return Board[b] == ' ';}
 	bool IsMarble(const unsigned b) const {return Board[b] != ' ';}
 	int sign() const {return Turn * 2 - 1;} // Let's see what will M$VC do
 	bool Quest(const char turn,const char board[]);
-    void Print(); 
-    void MakeMove(const move& m);
+	void Print(); 
+	void MakeMove(const move& m);
 	void UndoMove(const move& m);
 	unsigned ListMoves(move Moves[MaxMoves], unsigned Order[MaxMoves],
 		const bool quiescent =false);
@@ -72,20 +72,20 @@ bool node::Quest(const char turn, const char board[])
 {
 	if (turn != 'b'&&turn != 'w')
 		return false;
-    unsigned w = std::count(board, board + 81, 'w');
-    unsigned b = std::count(board, board + 81, 'b');
-    unsigned s = std::count(board, board + 81, ' ');
-    if(w!=10||b!=10||w+b+s!=81)
-        return false;
-    Set(turn,board);
-    return true;
+	unsigned w = std::count(board, board + 81, 'w');
+	unsigned b = std::count(board, board + 81, 'b');
+	unsigned s = std::count(board, board + 81, ' ');
+	if(w!=10||b!=10||w+b+s!=81)
+		return false;
+	Set(turn,board);
+	return true;
 }
 
 // print current node
 void node::Print()
 {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    for(int i=0;i<17;i++){
+	for(int i=0;i<17;i++){
 		for (int j = 0; j < std::max(8 - i,i-8); j++) printf("  ");
 		for (int j = std::max(0,i-8); j <= std::min(i,8); j++) {
 			unsigned b = Board[(i - j) * 9 + j];
@@ -99,8 +99,8 @@ void node::Print()
 			//printf("\033[37m");
 			SetConsoleTextAttribute(hConsole, 15);
 		}
-        printf("\n");
-    }
+		printf("\n");
+	}
 }
 
 // apply the move on current node
@@ -179,5 +179,5 @@ unsigned node::ListMoves(move Moves[MaxMoves], unsigned Order[MaxMoves],
 		std::reverse(Order, Order + n);
 	if (quiescent) // drop <2 moves in quiescent search
 		n = Turn ? n - count2[2] : count2[-1];// drop >-2 moves for black 
-    return n;
+	return n;
 }
