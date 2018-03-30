@@ -1,35 +1,34 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2016.10.13
+// 2012.9.7-2018.3.30
 //========================================================================
 #include <cstdio>
-#include <cstdlib>
-#include <ctime>
-#include <climits>
+#include <cstring>
+#include <chrono>
 #include <algorithm>
-#include "node.hpp"
+#include "position.hpp"
 #include "move.hpp"
 
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
 constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
-node Curr; // current node; use pairing MakeMove and UndoMove to keep track
+constexpr int NoCutOff = 137; // also represents an impossible score
+position Curr; // current position
 
-int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned Order[MaxMoves],
-	unsigned& movesNbr);
-int AlphaBeta(node& Node,move& Move);
+int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
+	unsigned Index[MaxBreadth], unsigned& MovesNo);
+int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth,int alpha,int beta);
 void Play();
 void Bench();
 
 int main()
 {
-	Pre();
+	PreCompute();
 	//setbuf(stdout, NULL);
-	//srand(time(0));
 
-	Play();
-	//Bench();
+	//Play();
+	Bench();
 }
 
 void Bench()
@@ -44,26 +43,30 @@ void Bench()
 		"       w "
 		"      ww "
 		"     w ww";
-	node Node;
+	position Node;
 	Node.Set('b',hard);
 	Node.Print();
 	move Move;
+	auto tstart = std::chrono::high_resolution_clock::now();
 	int a = AlphaBeta(Node, Move);
-	printf("%d\n", a);
+	auto tend = std::chrono::high_resolution_clock::now();
+	printf("time = %lld ms\n", std::chrono::duration_cast<
+		std::chrono::milliseconds>(tend - tstart).count());
+	printf("score = %d\n", a);
 	Move.Print();
 }
 
 void Play()
 {
-	node Node;
+	position Node;
 	Node.Init();
 	Node.Print();
 	move Move;
-	move Moves[MaxMoves];
-	unsigned Order[MaxMoves];
+	move Moves[MaxBreadth];
+	unsigned Index[MaxBreadth];
 
 	while(true){
-		unsigned n = Node.ListMoves(Moves, Order);
+		unsigned n = Node.ListMoves(Moves, Index);
 		char buf[20];
 		int ch;
 		while(fgets(buf,20,stdin)!=0){
@@ -84,7 +87,8 @@ void Play()
 				}
 			}
 			else if(len==19 && buf[1]==':'){//Board
-				if(Node.Quest(buf[0],buf+2)){
+				if(Node.IsLegal(buf[0], buf + 2)){
+					Node.Set(buf[0], buf + 2);
 					break;
 				}
 			}
@@ -98,48 +102,47 @@ void Play()
 	}
 }
 
-int CutoffTest(unsigned Depth, move Moves[MaxMoves], unsigned Order[MaxMoves],
-	unsigned& movesNbr)
+int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
+	unsigned Index[MaxBreadth], unsigned& MovesNo)
 {
-	if (Curr.rank[0] == -Win)
-		return 2 * -Win * Curr.sign();
-	if (Curr.rank[1] == Win)
-		return 2 * Win * Curr.sign();
+	if (Curr.Score[0] == -Win)
+		return 2 * -Win * Curr.Turn;
+	if (Curr.Score[1] == Win)
+		return 2 * Win * Curr.Turn;
 	if (Depth <= QuietDepth) {
-		movesNbr = Curr.ListMoves(Moves, Order);// normal search
-		return INT_MAX;//INT_MAX means no cut off
+		MovesNo = Curr.ListMoves(Moves, Index);// normal search
+		return NoCutOff;
 	}
 	if (Depth < MaxDepth) {
-		movesNbr = Curr.ListMoves(Moves, Order, true);// quiescent search
-		if(movesNbr != 0) // noisy node
-			return INT_MAX;//INT_MAX means no cut off
+		MovesNo = Curr.ListMoves(Moves, Index, true);// quiescent search
+		if(MovesNo != 0) // noisy position
+			return NoCutOff;
 	}
-	//evaluate quiet node or max depth node
-	return (Curr.rank[0] + Curr.rank[1]) * Curr.sign();
+	//evaluate quiet position or max depth position
+	return (Curr.Score[0] + Curr.Score[1]) * Curr.Turn;
 }
 
-int AlphaBeta(node& Node,move& Move)
+int AlphaBeta(position& Node,move& Move)
 {
-	int alpha = -INT_MAX;
-	int beta = INT_MAX;
+	int alpha = -NoCutOff;
+	int beta = NoCutOff;
 	Curr = Node;
 	constexpr int Depth = 0;
 
-	move Moves[MaxMoves];//possible moves
-	unsigned Order[MaxMoves];
-	unsigned movesNbr;
-	int Utility = CutoffTest(Depth, Moves, Order, movesNbr);
-	if(Utility!=INT_MAX)
+	move Moves[MaxBreadth];//possible moves
+	unsigned Index[MaxBreadth];
+	unsigned MovesNo;
+	int Utility = CutoffTest(Depth, Moves, Index, MovesNo);
+	if(Utility != NoCutOff)
 		return Utility;
-	for(unsigned i=0;i<movesNbr;i++){
-		Curr.MakeMove(Moves[Order[i]]);
+	for(unsigned i=0;i<MovesNo;i++){
+		Curr.MakeMove(Moves[Index[i]]);
 		int score = -NegaMax(Depth + 1,-beta,-alpha);//new utility
-		Curr.UndoMove(Moves[Order[i]]);
+		Curr.UndoMove(Moves[Index[i]]);
 		if(score>alpha){
 			alpha=score;
-			Move=Moves[Order[i]];
+			Move=Moves[Index[i]];
 		}
-		
 	}
 	return alpha;
 }
@@ -148,16 +151,16 @@ int NegaMax(unsigned Depth,int alpha,int beta)
 {
 	if(alpha==Win) return Win;//pre alpha-prune
 
-	move Moves[MaxMoves];//possible moves
-	unsigned Order[MaxMoves];
-	unsigned movesNbr;
-	int Utility = CutoffTest(Depth, Moves, Order, movesNbr);
-	if (Utility != INT_MAX)
+	move Moves[MaxBreadth];//possible moves
+	unsigned Index[MaxBreadth];
+	unsigned MovesNo;
+	int Utility = CutoffTest(Depth, Moves, Index, MovesNo);
+	if (Utility != NoCutOff)
 		return Utility;
-	for(unsigned i=0;i<movesNbr;i++){
-		Curr.MakeMove(Moves[Order[i]]);
+	for(unsigned i=0;i<MovesNo;i++){
+		Curr.MakeMove(Moves[Index[i]]);
 		int score = -NegaMax(Depth+1,-beta,-alpha);//new utility
-		Curr.UndoMove(Moves[Order[i]]);
+		Curr.UndoMove(Moves[Index[i]]);
 		if(score>=beta) return beta;//beta-prune,fail-hard
 		if(score>alpha) alpha=score;
 	}

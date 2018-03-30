@@ -23,7 +23,10 @@
     <ClInclude Include="move.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="node.hpp">
+    <ClInclude Include="color.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="position.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
