@@ -2,12 +2,13 @@
 // engine.cpp
 // 2012.9.7-2016.10.13
 //========================================================================
-#include<cstdio>
-#include<cstdlib>
-#include<ctime>
-#include<algorithm>
-#include"node.hpp"
-#include"move.hpp"
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <climits>
+#include <algorithm>
+#include "node.hpp"
+#include "move.hpp"
 
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
 constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
@@ -27,13 +28,13 @@ int main()
 	//setbuf(stdout, NULL);
 	//srand(time(0));
 
-	//Play();
-	Bench();
+	Play();
+	//Bench();
 }
 
 void Bench()
 {
-	constexpr char * hard =
+	const char* hard =
 		"bbbb     "
 		" bb      "
 		"         "

@@ -4,12 +4,11 @@
 //========================================================================
 #pragma once
 
-#include<cstdio>
-#include<algorithm>
-#include<numeric>
-#include"move.hpp"
-#define NOMINMAX
-#include <windows.h>
+#include <cstdio>
+#include <algorithm>
+#include <numeric>
+#include "move.hpp"
+#include "color.hpp"
 
 constexpr unsigned MaxMoves = 240;
 
@@ -19,7 +18,7 @@ struct node{//positon
 	bool Turn; // in the name of white
 	int rank[2];
 
-	constexpr static char* init = 
+	constexpr static const char* init =
 		"bbbb     "
 		"bbb      "
 		"bb       "
@@ -84,20 +83,16 @@ bool node::Quest(const char turn, const char board[])
 // print current node
 void node::Print()
 {
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	for(int i=0;i<17;i++){
 		for (int j = 0; j < std::max(8 - i,i-8); j++) printf("  ");
 		for (int j = std::max(0,i-8); j <= std::min(i,8); j++) {
 			unsigned b = Board[(i - j) * 9 + j];
 			if(b<10)
-			//case 'w': printf("\033[32m"); break;
-				SetConsoleTextAttribute(hConsole, 10);
+				SetConsoleColor(Color::green);
 			else if(b<20)
-			//case 'b': printf("\033[31m"); break;
-				SetConsoleTextAttribute(hConsole, 12);
+				SetConsoleColor(Color::red);
 			printf("%02d  ", (i - j) * 9 + j);
-			//printf("\033[37m");
-			SetConsoleTextAttribute(hConsole, 15);
+			SetConsoleColor(Color::white);
 		}
 		printf("\n");
 	}
