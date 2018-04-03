@@ -10,7 +10,7 @@
 #include "move.hpp"
 #include "color.hpp"
 
-constexpr unsigned MaxBreadth = 240;
+constexpr unsigned MaxBreadth = 100;
 
 struct position{ // positon
 	unsigned Board[81]; // also the inverted index for cordinates
@@ -160,6 +160,12 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 			rear++;
 		}
 	}
+	if(MovesNo >= MaxBreadth){
+		printf("%d\n",MovesNo);
+		Print();
+		exit(0);
+	}
+
 	// counting sort the index
 	unsigned count[33] = {};
 	unsigned* const count2 = count + 16;
