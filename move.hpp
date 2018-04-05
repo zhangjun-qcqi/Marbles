@@ -1,12 +1,14 @@
 //========================================================================
 // move.hpp
-// 2012.9.8-2018.3.30
+// 2012.9.8-2018.4.4
 //========================================================================
 #pragma once
 
 #include <cstdio>
+#include <random>
 
 int Scores[81];
+unsigned long long Hashes[81][2];
 struct {
 	unsigned AdjNo;
 	unsigned Adj[6];
@@ -26,6 +28,7 @@ void PreCompute()
 		{ 1,0 },//down
 		{ 0,1 },//right
 	};
+	std::mt19937_64 gen;
 	for (unsigned b = 0; b < 81; b++) {
 		const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
 		const unsigned j = b % 9;
@@ -43,6 +46,8 @@ void PreCompute()
 				}
 			}
 		}
+		Hashes[b][0] = gen();
+		Hashes[b][1] = gen();
 	}
 }
 
