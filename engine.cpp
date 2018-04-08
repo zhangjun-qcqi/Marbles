@@ -105,10 +105,11 @@ void Play()
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo)
 {
+	const int sign = Curr.WhiteTurn ? 1 : -1;
 	if (Curr.Score[0] == -Win)
-		return 2 * -Win * Curr.Turn;
+		return 2 * -Win * sign;
 	if (Curr.Score[1] == Win)
-		return 2 * Win * Curr.Turn;
+		return 2 * Win * sign;
 	if (Depth <= QuietDepth) {
 		MovesNo = Curr.ListMoves(Moves, Index);// normal search
 		return NoCutOff;
@@ -119,7 +120,7 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 			return NoCutOff;
 	}
 	//evaluate quiet position or max depth position
-	return (Curr.Score[0] + Curr.Score[1]) * Curr.Turn;
+	return (Curr.Score[0] + Curr.Score[1]) * sign;
 }
 
 int AlphaBeta(position& Node,move& Move)

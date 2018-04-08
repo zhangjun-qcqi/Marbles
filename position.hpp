@@ -15,8 +15,9 @@ constexpr unsigned MaxBreadth = 100;
 struct position{ // positon
 	unsigned Board[81]; // also the inverted index for cordinates
 	unsigned Coordinate[20]; // cordinates for the marbles; blacks first
-	int Turn; // 1 = white; -1 = black
+	bool WhiteTurn; // true if it is white's turn
 	int Score[2]; // scores for black and white
+	//int Hash; // Zobrist hashing
 
 	constexpr static const char* init =
 		"bbbb     "
@@ -44,7 +45,7 @@ struct position{ // positon
 // set current position using inputs
 void position::Set(const char turn, const char board[])
 {
-	Turn = turn == 'w' ? 1 : -1;
+	WhiteTurn = turn == 'w';
 	unsigned white = 10;
 	unsigned black = 0;
 	Score[0] = 0;
@@ -99,8 +100,8 @@ void position::Print()
 // apply the move on current position
 void position::MakeMove(const move& m)
 {
-	Score[Turn == 1] += m.score;
-	Turn = -Turn;
+	Score[WhiteTurn] += m.score;
+	WhiteTurn = !WhiteTurn;
 	Coordinate[Board[m.orig]] = m.dest;
 	Board[m.dest] = Board[m.orig];
 	Board[m.orig] = ' ';
@@ -109,8 +110,8 @@ void position::MakeMove(const move& m)
 // undo the move on current position
 void position::UndoMove(const move& m)
 {
-	Score[Turn == 1] -= m.score;
-	Turn = -Turn;
+	Score[WhiteTurn] -= m.score;
+	WhiteTurn = !WhiteTurn;
 	Coordinate[Board[m.dest]] = m.orig;
 	Board[m.orig] = Board[m.dest];
 	Board[m.dest] = ' ';
@@ -121,7 +122,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], const bool quiet)
 {
 	unsigned MovesNo = 0;
-	unsigned start = (Turn == 1) * 10;
+	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
 		unsigned orig = Coordinate[i];
 		if (!quiet) { // only in quiescent search
@@ -174,9 +175,9 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 	std::partial_sum(count, count + 33, count);
 	for (unsigned i = MovesNo-1; i < MovesNo; i--)
 		Index[--count2[Moves[i].score]] = i;
-	if (Turn == 1) // default ascending, so reverse the moves in white's turn
+	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
 		std::reverse(Index, Index + MovesNo);
 	if (quiet) // drop <2 moves in quiescent search; drop >-2 moves for black
-		MovesNo = Turn == 1 ? MovesNo - count2[2] : count2[-1];
+		MovesNo = WhiteTurn ? MovesNo - count2[2] : count2[-1];
 	return MovesNo;
 }
