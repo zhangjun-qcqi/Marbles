@@ -16,12 +16,12 @@ constexpr unsigned MaxDepth = QuietDepth+4;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
-std::unordered_map<unsigned long long, transposition> Transposition; // transposition table
+std::unordered_map<unsigned long long, transposition> TTable; // transposition table
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
-int NegaMax(unsigned Depth,int alpha,int beta);
+int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
 void Bench();
 
@@ -128,45 +128,31 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 
 int AlphaBeta(position& Node,move& Move)
 {
-	int alpha = -NoCutOff;
-	int beta = NoCutOff;
 	Curr = Node;
-	constexpr int Depth = 0;
-
-	move Moves[MaxBreadth];//possible moves
-	unsigned Index[MaxBreadth];
-	unsigned MovesNo;
-	int Utility = CutoffTest(Depth, Moves, Index, MovesNo);
-	if(Utility != NoCutOff)
-		return Utility;
-	for(unsigned i=0;i<MovesNo;i++){
-		Curr.MakeMove(Moves[Index[i]]);
-		int score = -NegaMax(Depth + 1,-beta,-alpha);//new utility
-		Curr.UndoMove(Moves[Index[i]]);
-		if(score>alpha){
-			alpha=score;
-			Move=Moves[Index[i]];
-		}
-	}
-	return alpha;
+	return NegaMax(0, -NoCutOff, NoCutOff, Move);
 }
 
-int NegaMax(unsigned Depth,int alpha,int beta)
+int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 {
 	if(alpha==Win) return Win;//pre alpha-prune
 
 	move Moves[MaxBreadth];//possible moves
 	unsigned Index[MaxBreadth];
 	unsigned MovesNo;
-	int Utility = CutoffTest(Depth, Moves, Index, MovesNo);
-	if (Utility != NoCutOff)
-		return Utility;
+	int score = CutoffTest(Depth, Moves, Index, MovesNo);
+	if (score != NoCutOff)
+		return score; // terminal node does not need a move
 	for(unsigned i=0;i<MovesNo;i++){
-		Curr.MakeMove(Moves[Index[i]]);
-		int score = -NegaMax(Depth+1,-beta,-alpha);//new utility
-		Curr.UndoMove(Moves[Index[i]]);
-		if(score>=beta) return beta;//beta-prune,fail-hard
-		if(score>alpha) alpha=score;
+		const move m = Moves[Index[i]];
+		Curr.MakeMove(m);
+		move dummy;
+		score = -NegaMax(Depth+1, -beta, -alpha, dummy);//new utility
+		Curr.UndoMove(m);
+		if(score >= beta) return beta;//beta-prune,fail-hard
+		if(score > alpha){
+			alpha=score;
+			Move = m;
+		}
 	}
 	return alpha;
 }
