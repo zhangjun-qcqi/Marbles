@@ -17,7 +17,7 @@ struct position{ // positon
 	unsigned Coordinate[20]; // cordinates for the marbles; blacks first
 	bool WhiteTurn; // true if it is white's turn
 	int Score[2]; // scores for black and white
-	//int Hash; // Zobrist hashing
+	unsigned long long Hash; // Zobrist hashing
 
 	constexpr static const char* init =
 		"bbbb     "
@@ -50,16 +50,19 @@ void position::Set(const char turn, const char board[])
 	unsigned black = 0;
 	Score[0] = 0;
 	Score[1] = 0;
+	Hash = 0;
 	for (unsigned b = 0; b<81; b++) {
 		if (board[b] == 'b') {
 			Board[b] = black;
 			Coordinate[black++] = b;
 			Score[0] += Scores[b];
+			Hash ^= Hashes[b][0];
 		}
 		else if (board[b] == 'w') {
 			Board[b] = white;
 			Coordinate[white++] = b;
 			Score[1] += Scores[b];
+			Hash ^= Hashes[b][0];
 		}
 		else
 			Board[b] = ' ';
@@ -105,6 +108,8 @@ void position::MakeMove(const move& m)
 	Coordinate[Board[m.orig]] = m.dest;
 	Board[m.dest] = Board[m.orig];
 	Board[m.orig] = ' ';
+	Hash ^= Hashes[m.dest][WhiteTurn];
+	Hash ^= Hashes[m.orig][WhiteTurn];
 }
 
 // undo the move on current position
@@ -115,6 +120,8 @@ void position::UndoMove(const move& m)
 	Coordinate[Board[m.dest]] = m.orig;
 	Board[m.orig] = Board[m.dest];
 	Board[m.dest] = ' ';
+	Hash ^= Hashes[m.dest][WhiteTurn];
+	Hash ^= Hashes[m.orig][WhiteTurn];
 }
 
 // list all possible moves of current position

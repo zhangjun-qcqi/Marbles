@@ -6,6 +6,9 @@
 !/**/
 !*.*
 
+# macOS
+.DS_Store
+
 # User-specific files
 *.suo
 *.user

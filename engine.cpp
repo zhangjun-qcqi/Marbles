@@ -6,14 +6,17 @@
 #include <cstring>
 #include <chrono>
 #include <algorithm>
+#include <unordered_map>
 #include "position.hpp"
 #include "move.hpp"
+#include "transposition.hpp"
 
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
-constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
+constexpr unsigned MaxDepth = QuietDepth+4;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
+std::unordered_map<unsigned long long, transposition> Transposition; // transposition table
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo);
