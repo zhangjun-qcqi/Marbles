@@ -29,6 +29,9 @@
     <ClInclude Include="position.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="transposition.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Marbles.natvis" />

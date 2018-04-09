@@ -150,6 +150,7 @@
     <ClInclude Include="color.hpp" />
     <ClInclude Include="move.hpp" />
     <ClInclude Include="position.hpp" />
+    <ClInclude Include="transposition.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="Marbles.natvis">

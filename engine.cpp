@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.3.30
+// 2012.9.7-2018.4.9
 //========================================================================
 #include <cstdio>
 #include <cstring>
@@ -12,7 +12,7 @@
 #include "transposition.hpp"
 
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
-constexpr unsigned MaxDepth = QuietDepth+4;//max search depth
+constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
@@ -115,12 +115,12 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 		return 2 * Win * sign;
 	if (Depth <= QuietDepth) {
 		MovesNo = Curr.ListMoves(Moves, Index);// normal search
-		return NoCutOff;
+		return -NoCutOff;
 	}
 	if (Depth < MaxDepth) {
 		MovesNo = Curr.ListMoves(Moves, Index, true);// quiescent search
 		if(MovesNo != 0) // noisy position
-			return NoCutOff;
+			return -NoCutOff;
 	}
 	//evaluate quiet position or max depth position
 	return (Curr.Score[0] + Curr.Score[1]) * sign;
@@ -139,20 +139,23 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	move Moves[MaxBreadth];//possible moves
 	unsigned Index[MaxBreadth];
 	unsigned MovesNo;
-	int score = CutoffTest(Depth, Moves, Index, MovesNo);
-	if (score != NoCutOff)
-		return score; // terminal node does not need a move
+	int best = CutoffTest(Depth, Moves, Index, MovesNo);
+	if (best != -NoCutOff)
+		return best; // terminal node does not need a move
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[Index[i]];
 		Curr.MakeMove(m);
 		move dummy;
-		score = -NegaMax(Depth+1, -beta, -alpha, dummy);//new utility
+		int score = -NegaMax(Depth+1, -beta, -alpha, dummy);
 		Curr.UndoMove(m);
-		if(score >= beta) return beta;//beta-prune,fail-hard
-		if(score > alpha){
-			alpha=score;
+		if (score > best) {
+			best = score;
 			Move = m;
+			if (score > alpha) {
+				alpha = score;
+				if (score >= beta) return beta;//beta-prune, fail-soft
+			}
 		}
 	}
-	return alpha;
+	return best;
 }
