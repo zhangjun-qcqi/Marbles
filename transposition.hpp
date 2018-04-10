@@ -8,16 +8,16 @@
 #include "move.hpp"
 #include "color.hpp"
 
-enum nodetype{
-	PVNode,
-	AllNode,
-	CutNode
+enum scoretype{
+	exact,
+	lowerbound,
+	upperbound
 };
 
 struct transposition{ // transposition
 	char Compressed[20]; // the compressed coordinates
 	int Score;
 	unsigned Depth;
-	move BestMove;
-	nodetype NodeType;
+	move Move;
+	scoretype ScoreType;
 };

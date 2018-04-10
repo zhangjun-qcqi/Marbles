@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.4.9
+// 2012.9.7-2018.4.10
 //========================================================================
 #include <cstdio>
 #include <cstring>
@@ -17,6 +17,7 @@ constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<unsigned long long, transposition> TTable; // transposition table
+int collision;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo);
@@ -57,6 +58,7 @@ void Bench()
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", a);
 	Move.Print();
+	printf("%d / %lu = %f\n", collision, TTable.size(), collision * 1.0 / TTable.size());
 }
 
 void Play()
@@ -134,7 +136,28 @@ int AlphaBeta(position& Node,move& Move)
 
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 {
+	int alphaOrig = alpha;
 	if(alpha==Win) return Win;//pre alpha-prune
+
+	transposition newT;
+	std::copy(Curr.Coordinate, Curr.Coordinate+20, newT.Compressed);
+	std::sort(newT.Compressed, newT.Compressed + 10);
+	std::sort(newT.Compressed + 10, newT.Compressed + 20);
+	if(TTable.count(Curr.Hash) != 0){
+		auto oldT = TTable[Curr.Hash];
+		if(oldT.Depth < Depth && std::equal(
+			oldT.Compressed, oldT.Compressed + 20, newT.Compressed)){
+			Move = oldT.Move;
+			if(oldT.ScoreType == scoretype::exact)
+				return oldT.Score;
+			else if (oldT.ScoreType == scoretype::lowerbound)
+				alpha = std::max(alpha, oldT.Score);
+			else
+				beta = std::min(beta, oldT.Score);
+			if (alpha >= beta)
+				return oldT.Score;
+	    }
+	}
 
 	move Moves[MaxBreadth];//possible moves
 	unsigned Index[MaxBreadth];
@@ -153,9 +176,26 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			Move = m;
 			if (score > alpha) {
 				alpha = score;
-				if (score >= beta) return beta;//beta-prune, fail-soft
+				if (score >= beta) break;//beta-prune, fail-soft
 			}
 		}
+	}
+
+	if (Depth <= QuietDepth){ // only store in table the nodes near the root
+		newT.Score = best;
+		newT.Depth = Depth;
+		newT.Move = Move;
+		if(best <= alphaOrig)
+			newT.ScoreType = scoretype::upperbound;
+		else if (best >= beta)
+			newT.ScoreType = scoretype::lowerbound;
+		else
+			newT.ScoreType = scoretype::exact;
+		if(TTable.count(Curr.Hash) != 0){
+			collision++;
+			//printf("%llu\n", Curr.Hash);
+		}
+		TTable[Curr.Hash] = newT;
 	}
 	return best;
 }
