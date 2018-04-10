@@ -104,12 +104,13 @@ void position::Print()
 void position::MakeMove(const move& m)
 {
 	Score[WhiteTurn] += m.score;
+	Hash ^= Hashes[m.dest][WhiteTurn];
+	Hash ^= Hashes[m.orig][WhiteTurn];
 	WhiteTurn = !WhiteTurn;
 	Coordinate[Board[m.orig]] = m.dest;
 	Board[m.dest] = Board[m.orig];
 	Board[m.orig] = ' ';
-	Hash ^= Hashes[m.dest][WhiteTurn];
-	Hash ^= Hashes[m.orig][WhiteTurn];
+
 }
 
 // undo the move on current position
