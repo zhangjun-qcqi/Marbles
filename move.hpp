@@ -1,14 +1,16 @@
 //========================================================================
 // move.hpp
-// 2012.9.8-2018.4.10
+// 2012.9.8-2018.4.11
 //========================================================================
 #pragma once
 
 #include <cstdio>
-#include <random>
+#include <bitset>
 
 int Scores[81];
-unsigned long long Hashes[81][2];
+typedef std::bitset<128> hash;
+hash Hashes[81][2];
+hash WhiteHash;
 struct {
 	unsigned AdjNo;
 	unsigned Adj[6];
@@ -28,7 +30,10 @@ void PreCompute()
 		{ 1,0 },//down
 		{ 0,1 },//right
 	};
-	std::mt19937_64 gen;
+	constexpr unsigned corners[20] = { 5, 6, 7, 8, 15, 16, 17, 25, 26, 35,
+		45, 54, 55, 63, 64, 65, 72, 73, 74 ,75 };
+	WhiteHash.set(127);
+	unsigned bit = 0;
 	for (unsigned b = 0; b < 81; b++) {
 		const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
 		const unsigned j = b % 9;
@@ -46,8 +51,14 @@ void PreCompute()
 				}
 			}
 		}
-		Hashes[b][0] = gen();
-		Hashes[b][1] = gen();
+		if (std::binary_search(corners, corners + 20, b)) {
+			Hashes[b][0].set(126);
+			Hashes[b][1].set(126);
+		}
+		else {
+			Hashes[b][0].set(bit++);
+			Hashes[b][1].set(bit++);
+		}
 	}
 }
 

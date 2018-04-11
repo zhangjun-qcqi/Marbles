@@ -1,6 +1,6 @@
 //========================================================================
 // transposition.cpp
-// 2018.4.9-2018.4.9
+// 2018.4.9-2018.4.11
 //========================================================================
 #include <cstdio>
 #include <algorithm>
@@ -15,9 +15,8 @@ enum scoretype{
 };
 
 struct transposition{ // transposition
-	char Compressed[20]; // the compressed coordinates
 	int Score;
+	scoretype ScoreType;
 	unsigned Depth;
 	move Move;
-	scoretype ScoreType;
 };

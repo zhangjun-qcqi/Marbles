@@ -1,12 +1,13 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.4.10
+// 2012.9.7-2018.4.11
 //========================================================================
 #include <cstdio>
 #include <cstring>
 #include <chrono>
 #include <algorithm>
 #include <unordered_map>
+#include <string>
 #include "position.hpp"
 #include "move.hpp"
 #include "transposition.hpp"
@@ -16,7 +17,7 @@ constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
-std::unordered_map<unsigned long long, transposition> TTable; // transposition table
+std::unordered_map<hash, transposition> TTable; // transposition table
 int collision;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
@@ -58,7 +59,7 @@ void Bench()
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", a);
 	Move.Print();
-	printf("%d / %lu = %f\n", collision, TTable.size(), collision * 1.0 / TTable.size());
+	printf("%d / %llu = %f\n", collision, TTable.size(), collision * 1.0 / TTable.size());
 }
 
 void Play()
@@ -136,17 +137,22 @@ int AlphaBeta(position& Node,move& Move)
 
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 {
+	static int call = 0;
+	call++;
 	int alphaOrig = alpha;
 	if(alpha==Win) return Win;//pre alpha-prune
 
-	transposition newT;
-	std::copy(Curr.Coordinate, Curr.Coordinate+20, newT.Compressed);
-	std::sort(newT.Compressed, newT.Compressed + 10);
-	std::sort(newT.Compressed + 10, newT.Compressed + 20);
-	if(TTable.count(Curr.Hash) != 0){
-		auto oldT = TTable[Curr.Hash];
-		if(oldT.Depth < Depth && std::equal(
-			oldT.Compressed, oldT.Compressed + 20, newT.Compressed)){
+	//const hash wow("00000011010001000011010001100001000010000000011101000000000000000101010100000000000000100000000000000001000000000101000001010001");
+	//if (Curr.Hash == wow) {
+	//	Curr.Print();
+	//}
+	bool isCorner = Curr.Hash[126];
+	transposition oldT;
+	bool hasOldT = false;
+	if(!isCorner && TTable.count(Curr.Hash) != 0){
+		oldT = TTable[Curr.Hash];
+		hasOldT = true;
+		if(oldT.Depth <= Depth){
 			Move = oldT.Move;
 			if(oldT.ScoreType == scoretype::exact)
 				return oldT.Score;
@@ -156,7 +162,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 				beta = std::min(beta, oldT.Score);
 			if (alpha >= beta)
 				return oldT.Score;
-	    }
+		}
 	}
 
 	move Moves[MaxBreadth];//possible moves
@@ -167,10 +173,15 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		return best; // terminal node does not need a move
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[Index[i]];
+		//auto Old = Curr;
 		Curr.MakeMove(m);
 		move dummy;
 		int score = -NegaMax(Depth+1, -beta, -alpha, dummy);
 		Curr.UndoMove(m);
+		//if (!std::equal((char*)&Curr, (char*)&Curr + sizeof(Curr), (char*)&Old)) {
+		//	Curr.Print();
+		//	Old.Print();
+		//}
 		if (score > best) {
 			best = score;
 			Move = m;
@@ -181,7 +192,8 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		}
 	}
 
-	if (Depth <= QuietDepth){ // only store in table the nodes near the root
+	if (!isCorner && Depth <= QuietDepth){ // only store in table the nodes near the root
+		transposition newT;
 		newT.Score = best;
 		newT.Depth = Depth;
 		newT.Move = Move;
@@ -191,9 +203,28 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			newT.ScoreType = scoretype::lowerbound;
 		else
 			newT.ScoreType = scoretype::exact;
-		if(TTable.count(Curr.Hash) != 0){
-			collision++;
+
+		//if (Curr.Hash == wow) {
+		//	Curr.Print();
+		//}
+		if(hasOldT){
+			//auto oldT = TTable[Curr.Hash];
+			//std::string s = Curr.Hash.to_string();
 			//printf("%llu\n", Curr.Hash);
+			if (oldT.ScoreType == scoretype::exact) {
+				Curr.Print();
+				collision++;
+			}
+			else if (newT.ScoreType != scoretype::exact
+				&& oldT.ScoreType != newT.ScoreType) {
+				if (oldT.Score != newT.Score) {
+					Curr.Print();
+					collision++;
+				}
+				else {
+					newT.ScoreType = scoretype::exact;
+				}
+			}
 		}
 		TTable[Curr.Hash] = newT;
 	}

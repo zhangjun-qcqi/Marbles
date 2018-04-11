@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.3.30
+// 2012.9.8-2018.4.11
 //========================================================================
 #pragma once
 
@@ -17,7 +17,7 @@ struct position{ // positon
 	unsigned Coordinate[20]; // cordinates for the marbles; blacks first
 	bool WhiteTurn; // true if it is white's turn
 	int Score[2]; // scores for black and white
-	unsigned long long Hash; // Zobrist hashing
+	hash Hash; // Zobrist hashing
 
 	constexpr static const char* init =
 		"bbbb     "
@@ -51,6 +51,8 @@ void position::Set(const char turn, const char board[])
 	Score[0] = 0;
 	Score[1] = 0;
 	Hash = 0;
+	if (WhiteTurn)
+		Hash ^= WhiteHash;
 	for (unsigned b = 0; b<81; b++) {
 		if (board[b] == 'b') {
 			Board[b] = black;
@@ -107,22 +109,25 @@ void position::MakeMove(const move& m)
 	Hash ^= Hashes[m.dest][WhiteTurn];
 	Hash ^= Hashes[m.orig][WhiteTurn];
 	WhiteTurn = !WhiteTurn;
+	Hash ^= WhiteHash;
+
 	Coordinate[Board[m.orig]] = m.dest;
 	Board[m.dest] = Board[m.orig];
 	Board[m.orig] = ' ';
-
 }
 
 // undo the move on current position
 void position::UndoMove(const move& m)
 {
-	Score[WhiteTurn] -= m.score;
+	Hash ^= WhiteHash;
 	WhiteTurn = !WhiteTurn;
+	Score[WhiteTurn] -= m.score;
+	Hash ^= Hashes[m.dest][WhiteTurn];
+	Hash ^= Hashes[m.orig][WhiteTurn];
+
 	Coordinate[Board[m.dest]] = m.orig;
 	Board[m.orig] = Board[m.dest];
 	Board[m.dest] = ' ';
-	Hash ^= Hashes[m.dest][WhiteTurn];
-	Hash ^= Hashes[m.orig][WhiteTurn];
 }
 
 // list all possible moves of current position
