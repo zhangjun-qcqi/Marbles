@@ -1,6 +1,6 @@
 //========================================================================
 // transposition.cpp
-// 2018.4.9-2018.4.11
+// 2018.4.9-2018.4.15
 //========================================================================
 #pragma once
 
@@ -10,15 +10,9 @@
 #include "move.hpp"
 #include "color.hpp"
 
-enum scoretype{
-	exact,
-	lowerbound,
-	upperbound
-};
-
 struct transposition{ // transposition
-	int Score;
-	scoretype ScoreType;
+	int Lowerbound;
+	int Upperbound;
 	unsigned Depth;
 	move Move;
 };

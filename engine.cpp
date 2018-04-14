@@ -12,14 +12,13 @@
 #include "transposition.hpp"
 
 constexpr unsigned QuietDepth = 7; // start quiescent search since this depth
-constexpr unsigned MaxDepth = QuietDepth + 3; // max search depth
-constexpr unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
+constexpr unsigned MaxDepth = QuietDepth + 4; // max search depth
+constexpr unsigned LeafDepth = MaxDepth - 4; // ignore deeper transpositions
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
 int usage;
-int different;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo);
@@ -33,8 +32,8 @@ int main()
 	PreCompute();
 	//setbuf(stdout, NULL);
 
-	//Play();
-	Bench();
+	Play();
+	//Bench();
 }
 
 void Bench()
@@ -110,13 +109,11 @@ void Play()
 		printf("score = %d\n", Utility);
 		printf("%d / %zu = %f\n", usage, TTable.size(),
 			usage * 1.0 / TTable.size());
-		printf("diff = %d\n", different);
 		Move.Print();
 		Node.MakeMove(Move);
 		Node.Print();
-		TTable.clear();
+		//TTable.clear();
 		usage = 0;
-		different = 0;
 	}
 }
 
@@ -171,14 +168,14 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		if(oldT.Depth <= Depth){
 			usage++;
 			Move = oldT.Move;
-			if(oldT.ScoreType == scoretype::exact)
-				return oldT.Score;
-			else if (oldT.ScoreType == scoretype::lowerbound)
-				alpha = std::max(alpha, oldT.Score);
-			else
-				beta = std::min(beta, oldT.Score);
-			if (alpha >= beta)
-				return oldT.Score;
+			if(oldT.Lowerbound == oldT.Upperbound)
+				return oldT.Lowerbound;
+			if (oldT.Lowerbound >= beta)
+				return oldT.Lowerbound;
+			if (alpha >= oldT.Upperbound)
+				return oldT.Upperbound;
+			alpha = std::max(alpha, oldT.Lowerbound);
+			beta = std::min(beta, oldT.Upperbound);
 		}
 	}
 
@@ -221,34 +218,26 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	if (!isCorner // ingore corner transpositions
 		&& Depth < LeafDepth){ // ignore leaves
 		transposition newT;
-		newT.Score = best;
 		newT.Depth = Depth;
 		newT.Move = Move;
-		if(best <= alphaOrig)
-			newT.ScoreType = scoretype::upperbound;
-		else if (best >= beta)
-			newT.ScoreType = scoretype::lowerbound;
-		else
-			newT.ScoreType = scoretype::exact;
+		if (best <= alphaOrig) {
+			newT.Lowerbound = -NoCutOff;
+			newT.Upperbound = best;
+		}
+		else if (best >= beta) {
+			newT.Lowerbound = best;
+			newT.Upperbound = NoCutOff;
+		}
+		else {
+			newT.Lowerbound = best;
+			newT.Upperbound = best;
+		}
 
 		if(hasOldT){
 			if (Depth == oldT.Depth) {
-				if (newT.ScoreType != scoretype::exact
-					&& oldT.ScoreType != newT.ScoreType) {
-					if (oldT.Score != newT.Score) {
-						//Curr.Print();
-						printf("different scores\n");
-						different++;
-						TTable[Curr.Hash] = newT;
-					}
-					else { // this happens
-						newT.ScoreType = scoretype::exact;
-						TTable[Curr.Hash] = newT;
-					}
-				}
-				else { // either they are the same type, or newT is exact
-					TTable[Curr.Hash] = newT;
-				}
+				newT.Lowerbound = std::max(oldT.Lowerbound, newT.Lowerbound);
+				newT.Upperbound = std::min(oldT.Upperbound, newT.Upperbound);
+				TTable[Curr.Hash] = newT;
 			}
 			else if (Depth < oldT.Depth) {
 				TTable[Curr.Hash] = newT;
