@@ -105,7 +105,7 @@ void position::Print()
 	}
 	unsigned long long ulls[2];
 	hash2ulls(Hash, ulls);
-	printf("%d [%d %d] %llX-%llX\n",
+	printf("%d [%d %d] %016llX-%016llX\n",
 		WhiteTurn, Score[0], Score[1], ulls[0], ulls[1]);
 }
 

@@ -12,8 +12,8 @@
 #include "transposition.hpp"
 
 constexpr unsigned QuietDepth = 7; // start quiescent search since this depth
-constexpr unsigned MaxDepth = QuietDepth + 4; // max search depth
-constexpr unsigned LeafDepth = MaxDepth - 4; // ignore deeper transpositions
+constexpr unsigned MaxDepth = QuietDepth + 3; // max search depth
+constexpr unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
@@ -32,8 +32,8 @@ int main()
 	PreCompute();
 	//setbuf(stdout, NULL);
 
-	Play();
-	//Bench();
+	//Play();
+	Bench();
 }
 
 void Bench()
@@ -162,7 +162,8 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	bool isCorner = Curr.Hash[126]; // we don't use corner transpositions
 	transposition oldT;
 	bool hasOldT = false;
-	if(!isCorner && TTable.count(Curr.Hash) != 0){
+	if(!isCorner && Depth < LeafDepth // ignore corners and leaves
+		&& TTable.count(Curr.Hash) != 0){
 		oldT = TTable[Curr.Hash];
 		hasOldT = true;
 		if(oldT.Depth <= Depth){
@@ -215,23 +216,12 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		Curr.Print();
 	}
 #endif
-	if (!isCorner // ingore corner transpositions
-		&& Depth < LeafDepth){ // ignore leaves
-		transposition newT;
-		newT.Depth = Depth;
-		newT.Move = Move;
-		if (best <= alphaOrig) {
+	if (!isCorner && Depth < LeafDepth){ // ignore corners and leaves
+		transposition newT = { best, best, Depth, Move };
+		if (best <= alphaOrig)
 			newT.Lowerbound = -NoCutOff;
-			newT.Upperbound = best;
-		}
-		else if (best >= beta) {
-			newT.Lowerbound = best;
+		else if (best >= beta)
 			newT.Upperbound = NoCutOff;
-		}
-		else {
-			newT.Lowerbound = best;
-			newT.Upperbound = best;
-		}
 
 		if(hasOldT){
 			if (Depth == oldT.Depth) {
