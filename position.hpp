@@ -112,7 +112,7 @@ void position::Print()
 // apply the move on current position
 void position::MakeMove(const move& m)
 {
-	Score[WhiteTurn] += m.score;
+	Score[WhiteTurn] += m.Score();
 	Hash ^= Hashes[m.dest][WhiteTurn];
 	Hash ^= Hashes[m.orig][WhiteTurn];
 	WhiteTurn = !WhiteTurn;
@@ -128,7 +128,7 @@ void position::UndoMove(const move& m)
 {
 	Hash ^= WhiteHash;
 	WhiteTurn = !WhiteTurn;
-	Score[WhiteTurn] -= m.score;
+	Score[WhiteTurn] -= m.Score();
 	Hash ^= Hashes[m.dest][WhiteTurn];
 	Hash ^= Hashes[m.orig][WhiteTurn];
 
@@ -191,10 +191,10 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 	unsigned count[33] = {};
 	unsigned* const count2 = count + 16;
 	for (unsigned i = 0; i < MovesNo; i++)
-		count2[Moves[i].score]++;
+		count2[Moves[i].Score()]++;
 	std::partial_sum(count, count + 33, count);
 	for (unsigned i = MovesNo - 1; i < MovesNo; i--)
-		Index[--count2[Moves[i].score]] = i;
+		Index[--count2[Moves[i].Score()]] = i;
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
 		std::reverse(Index, Index + MovesNo);
 	if (quiet) // drop <2 moves in quiescent search; drop >-2 moves for black

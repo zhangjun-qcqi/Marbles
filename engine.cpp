@@ -11,7 +11,7 @@
 #include "move.hpp"
 #include "transposition.hpp"
 
-constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
+constexpr unsigned QuietDepth = 6;//start quiescent search when depth >= this
 constexpr unsigned MaxDepth = QuietDepth+4;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
@@ -116,7 +116,7 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 		return 2 * -Win * sign;
 	if (Curr.Score[1] == Win)
 		return 2 * Win * sign;
-	if (Depth <= QuietDepth) {
+	if (Depth < QuietDepth) {
 		MovesNo = Curr.ListMoves(Moves, Index);// normal search
 		return -NoCutOff;
 	}
@@ -207,7 +207,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 #endif
 	if (!isCorner // ingore corner transpositions
-		&& Depth <= QuietDepth){ // only store in table the nodes near the root
+		&& Depth < MaxDepth-2){ // ignore leaves
 		transposition newT;
 		newT.Score = best;
 		newT.Depth = Depth;

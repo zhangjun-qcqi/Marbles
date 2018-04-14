@@ -79,21 +79,14 @@ hash ulls2hash(const unsigned long long ulls[2])
 
 struct move{
 	unsigned orig,dest;
-	int score;
 
-	void Set(const unsigned o, const unsigned d) {
-		orig = o;
-		dest = d;
-		score = Scores[dest] - Scores[orig];
-	}
+	void Set(const unsigned o, const unsigned d) { orig = o; dest = d; }
+	int Score() const{ return Scores[dest] - Scores[orig];}
 	void Set(const char b[]) {
 		Set((b[0] - '0') * 10 + b[1] - '0', (b[2] - '0') * 10 + b[3] - '0');
 	}
 	void Print() { printf("%02d%02d\n", orig, dest); }
 	bool operator==(const move& b) const {
 		return orig == b.orig && dest == b.dest;
-	}
-	bool operator<(const move& b) const{
-		return score < b.score;
 	}
 };
