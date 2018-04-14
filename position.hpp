@@ -11,7 +11,7 @@
 #include "move.hpp"
 #include "color.hpp"
 
-constexpr unsigned MaxBreadth = 100;
+constexpr unsigned MaxBreadth = 104;
 
 struct position{ // positon
 	std::array<unsigned,81> Board; // also the inverted index for coordinates
@@ -181,8 +181,8 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 			rear++;
 		}
 	}
-	if (MovesNo >= MaxBreadth) {
-		printf("%d\n", MovesNo);
+	if (MovesNo > MaxBreadth) {
+		printf("MovesNo=%d\n", MovesNo);
 		Print();
 		exit(0);
 	}

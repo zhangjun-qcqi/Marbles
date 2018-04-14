@@ -11,13 +11,15 @@
 #include "move.hpp"
 #include "transposition.hpp"
 
-constexpr unsigned QuietDepth = 6;//start quiescent search when depth >= this
-constexpr unsigned MaxDepth = QuietDepth+4;//max search depth
+constexpr unsigned QuietDepth = 7; // start quiescent search since this depth
+constexpr unsigned MaxDepth = QuietDepth + 3; // max search depth
+constexpr unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
 int usage;
+int different;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo);
@@ -100,11 +102,21 @@ void Play()
 			}
 		}
 		printf("thinking...\n");
+		auto tstart = std::chrono::high_resolution_clock::now();
 		int Utility = AlphaBeta(Node,Move);
-		printf("%d\n", Utility);
+		auto tend = std::chrono::high_resolution_clock::now();
+		printf("time = %lld ms\n", std::chrono::duration_cast<
+			std::chrono::milliseconds>(tend - tstart).count());
+		printf("score = %d\n", Utility);
+		printf("%d / %zu = %f\n", usage, TTable.size(),
+			usage * 1.0 / TTable.size());
+		printf("diff = %d\n", different);
 		Move.Print();
 		Node.MakeMove(Move);
 		Node.Print();
+		TTable.clear();
+		usage = 0;
+		different = 0;
 	}
 }
 
@@ -207,7 +219,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 #endif
 	if (!isCorner // ingore corner transpositions
-		&& Depth < MaxDepth-2){ // ignore leaves
+		&& Depth < LeafDepth){ // ignore leaves
 		transposition newT;
 		newT.Score = best;
 		newT.Depth = Depth;
@@ -224,8 +236,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 				if (newT.ScoreType != scoretype::exact
 					&& oldT.ScoreType != newT.ScoreType) {
 					if (oldT.Score != newT.Score) {
-						Curr.Print();
+						//Curr.Print();
 						printf("different scores\n");
+						different++;
 						TTable[Curr.Hash] = newT;
 					}
 					else { // this happens
@@ -241,7 +254,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 				TTable[Curr.Hash] = newT;
 			}
 			else { // shallower score vs deeper score, which is better?
-				Curr.Print();
+				//Curr.Print();
 				printf("old is shallower\n");
 			}
 		}
