@@ -17,7 +17,7 @@ constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
-int collision;
+int usage;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	unsigned Index[MaxBreadth], unsigned& MovesNo);
@@ -58,8 +58,8 @@ void Bench()
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", a);
 	Move.Print();
-	printf("%d / %zu = %f\n", collision, TTable.size(),
-		collision * 1.0 / TTable.size());
+	printf("%d / %zu = %f\n", usage, TTable.size(),
+		usage * 1.0 / TTable.size());
 }
 
 void Play()
@@ -135,23 +135,29 @@ int AlphaBeta(position& Node,move& Move)
 	return NegaMax(0, -NoCutOff, NoCutOff, Move);
 }
 
+#ifndef NDEBUG
+constexpr unsigned long long ulls[] = {0x344140310055002, 0xD100800200005055};
+const hash wow = ulls2hash(ulls);
+#endif
+
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 {
 	int alphaOrig = alpha;
 	if(alpha==Win) return Win;//pre alpha-prune
 
-	//unsigned long long ulls[] = { 0x0, 0x0 };
-	//const hash wow = ulls2hash(ulls);
-	//if (Curr.Hash == wow) {
-	//	Curr.Print();
-	//}
-	bool isCorner = Curr.Hash[126];
+#ifndef NDEBUG
+	if (Curr.Hash == wow) {
+		Curr.Print();
+	}
+#endif
+	bool isCorner = Curr.Hash[126]; // we don't use corner transpositions
 	transposition oldT;
 	bool hasOldT = false;
 	if(!isCorner && TTable.count(Curr.Hash) != 0){
 		oldT = TTable[Curr.Hash];
 		hasOldT = true;
 		if(oldT.Depth <= Depth){
+			usage++;
 			Move = oldT.Move;
 			if(oldT.ScoreType == scoretype::exact)
 				return oldT.Score;
@@ -172,14 +178,14 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		return best; // terminal node does not need a move
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[Index[i]];
-#ifndef NDEBUG
+#ifdef DEBUG_MAKE_MOVE
 		auto Old = Curr;
 #endif
 		Curr.MakeMove(m);
 		move dummy;
 		int score = -NegaMax(Depth+1, -beta, -alpha, dummy);
 		Curr.UndoMove(m);
-#ifndef NDEBUG
+#ifdef DEBUG_MAKE_MOVE
 		if (Old != Curr) {
 			Curr.Print();
 			Old.Print();
@@ -195,7 +201,13 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		}
 	}
 
-	if (!isCorner && Depth <= QuietDepth){ // only store in table the nodes near the root
+#ifndef NDEBUG
+	if (Curr.Hash == wow) {
+		Curr.Print();
+	}
+#endif
+	if (!isCorner // ingore corner transpositions
+		&& Depth <= QuietDepth){ // only store in table the nodes near the root
 		transposition newT;
 		newT.Score = best;
 		newT.Depth = Depth;
@@ -207,26 +219,34 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		else
 			newT.ScoreType = scoretype::exact;
 
-		//if (Curr.Hash == wow) {
-		//	Curr.Print();
-		//}
 		if(hasOldT){
-			if (oldT.ScoreType == scoretype::exact) {
-				Curr.Print();
-				collision++;
+			if (Depth == oldT.Depth) {
+				if (newT.ScoreType != scoretype::exact
+					&& oldT.ScoreType != newT.ScoreType) {
+					if (oldT.Score != newT.Score) {
+						Curr.Print();
+						printf("different scores\n");
+						TTable[Curr.Hash] = newT;
+					}
+					else { // this happens
+						newT.ScoreType = scoretype::exact;
+						TTable[Curr.Hash] = newT;
+					}
+				}
+				else { // either they are the same type, or newT is exact
+					TTable[Curr.Hash] = newT;
+				}
 			}
-			else if (newT.ScoreType != scoretype::exact
-				&& oldT.ScoreType != newT.ScoreType) {
-				if (oldT.Score != newT.Score) {
-					Curr.Print();
-					collision++;
-				}
-				else {
-					newT.ScoreType = scoretype::exact;
-				}
+			else if (Depth < oldT.Depth) {
+				TTable[Curr.Hash] = newT;
+			}
+			else { // shallower score vs deeper score, which is better?
+				Curr.Print();
+				printf("old is shallower\n");
 			}
 		}
-		TTable[Curr.Hash] = newT;
+		else
+			TTable[Curr.Hash] = newT;
 	}
 	return best;
 }
