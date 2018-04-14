@@ -1,19 +1,18 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.4.11
+// 2012.9.7-2018.4.14
 //========================================================================
 #include <cstdio>
 #include <cstring>
 #include <chrono>
 #include <algorithm>
 #include <unordered_map>
-#include <string>
 #include "position.hpp"
 #include "move.hpp"
 #include "transposition.hpp"
 
 constexpr unsigned QuietDepth = 6;//start quiescent search when depth > this
-constexpr unsigned MaxDepth = QuietDepth+3;//max search depth
+constexpr unsigned MaxDepth = QuietDepth+4;//max search depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
@@ -59,7 +58,8 @@ void Bench()
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", a);
 	Move.Print();
-	printf("%d / %llu = %f\n", collision, TTable.size(), collision * 1.0 / TTable.size());
+	printf("%d / %zu = %f\n", collision, TTable.size(),
+		collision * 1.0 / TTable.size());
 }
 
 void Play()
@@ -137,12 +137,11 @@ int AlphaBeta(position& Node,move& Move)
 
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 {
-	static int call = 0;
-	call++;
 	int alphaOrig = alpha;
 	if(alpha==Win) return Win;//pre alpha-prune
 
-	//const hash wow("00000011010001000011010001100001000010000000011101000000000000000101010100000000000000100000000000000001000000000101000001010001");
+	//unsigned long long ulls[] = { 0x0, 0x0 };
+	//const hash wow = ulls2hash(ulls);
 	//if (Curr.Hash == wow) {
 	//	Curr.Print();
 	//}
@@ -173,15 +172,19 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		return best; // terminal node does not need a move
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[Index[i]];
-		//auto Old = Curr;
+#ifndef NDEBUG
+		auto Old = Curr;
+#endif
 		Curr.MakeMove(m);
 		move dummy;
 		int score = -NegaMax(Depth+1, -beta, -alpha, dummy);
 		Curr.UndoMove(m);
-		//if (!std::equal((char*)&Curr, (char*)&Curr + sizeof(Curr), (char*)&Old)) {
-		//	Curr.Print();
-		//	Old.Print();
-		//}
+#ifndef NDEBUG
+		if (Old != Curr) {
+			Curr.Print();
+			Old.Print();
+		}
+#endif
 		if (score > best) {
 			best = score;
 			Move = m;
@@ -208,9 +211,6 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		//	Curr.Print();
 		//}
 		if(hasOldT){
-			//auto oldT = TTable[Curr.Hash];
-			//std::string s = Curr.Hash.to_string();
-			//printf("%llu\n", Curr.Hash);
 			if (oldT.ScoreType == scoretype::exact) {
 				Curr.Print();
 				collision++;

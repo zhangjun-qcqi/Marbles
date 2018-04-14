@@ -1,22 +1,23 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.4.11
+// 2012.9.8-2018.4.14
 //========================================================================
 #pragma once
 
 #include <cstdio>
 #include <algorithm>
 #include <numeric>
+#include <array>
 #include "move.hpp"
 #include "color.hpp"
 
 constexpr unsigned MaxBreadth = 100;
 
 struct position{ // positon
-	unsigned Board[81]; // also the inverted index for cordinates
-	unsigned Coordinate[20]; // cordinates for the marbles; blacks first
+	std::array<unsigned,81> Board; // also the inverted index for coordinates
+	std::array<unsigned,20> Coordinate; // coordinates for marbles; blacks 1st
 	bool WhiteTurn; // true if it is white's turn
-	int Score[2]; // scores for black and white
+	std::array<int,2> Score; // scores for black and white
 	hash Hash; // Zobrist hashing
 
 	constexpr static const char* init =
@@ -40,6 +41,8 @@ struct position{ // positon
 	void UndoMove(const move& m);
 	unsigned ListMoves(move Moves[MaxBreadth], unsigned Index[MaxBreadth],
 		const bool quiet =false);
+	bool operator== (const position& b);
+	bool operator!= (const position& b) { return !operator==(b);}
 };
 
 // set current position using inputs
@@ -100,6 +103,10 @@ void position::Print()
 		}
 		printf("\n");
 	}
+	unsigned long long ulls[2];
+	hash2ulls(Hash, ulls);
+	printf("%d [%d %d] %llX-%llX\n",
+		WhiteTurn, Score[0], Score[1], ulls[0], ulls[1]);
 }
 
 // apply the move on current position
@@ -174,8 +181,8 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 			rear++;
 		}
 	}
-	if(MovesNo >= MaxBreadth){
-		printf("%d\n",MovesNo);
+	if (MovesNo >= MaxBreadth) {
+		printf("%d\n", MovesNo);
 		Print();
 		exit(0);
 	}
@@ -186,11 +193,20 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 	for (unsigned i = 0; i < MovesNo; i++)
 		count2[Moves[i].score]++;
 	std::partial_sum(count, count + 33, count);
-	for (unsigned i = MovesNo-1; i < MovesNo; i--)
+	for (unsigned i = MovesNo - 1; i < MovesNo; i--)
 		Index[--count2[Moves[i].score]] = i;
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
 		std::reverse(Index, Index + MovesNo);
 	if (quiet) // drop <2 moves in quiescent search; drop >-2 moves for black
 		MovesNo = WhiteTurn ? MovesNo - count2[2] : count2[-1];
 	return MovesNo;
+}
+
+bool position::operator==(const position & b)
+{
+	return Board == b.Board
+		&& Coordinate == b.Coordinate
+		&& WhiteTurn == b.WhiteTurn
+		&& Score == b.Score
+		&& Hash == b.Hash;
 }

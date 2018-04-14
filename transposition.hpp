@@ -2,6 +2,8 @@
 // transposition.cpp
 // 2018.4.9-2018.4.11
 //========================================================================
+#pragma once
+
 #include <cstdio>
 #include <algorithm>
 #include <numeric>

@@ -1,6 +1,6 @@
 //========================================================================
 // move.hpp
-// 2012.9.8-2018.4.11
+// 2012.9.8-2018.4.14
 //========================================================================
 #pragma once
 
@@ -60,6 +60,21 @@ void PreCompute()
 			Hashes[b][1].set(bit++);
 		}
 	}
+}
+
+void hash2ulls(const hash& h, unsigned long long ulls[2])
+{
+	constexpr hash mask = ULLONG_MAX;
+	ulls[0] = (h >> 64).to_ullong();
+	ulls[1] = (h & mask).to_ullong();
+}
+
+hash ulls2hash(const unsigned long long ulls[2])
+{
+	hash h = ulls[0];
+	h <<= 64;
+	h ^= ulls[1];
+	return h;
 }
 
 struct move{
