@@ -11,9 +11,9 @@
 #include "move.hpp"
 #include "transposition.hpp"
 
-constexpr unsigned QuietDepth = 7; // start quiescent search since this depth
-constexpr unsigned MaxDepth = QuietDepth + 3; // max search depth
-constexpr unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
+unsigned QuietDepth = 7; // start quiescent search since this depth
+unsigned MaxDepth = QuietDepth + 4; // max search depth
+unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
@@ -25,7 +25,7 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
-void Bench();
+void Bench(const char * board, char player, const unsigned depths[]);
 
 int main()
 {
@@ -33,23 +33,17 @@ int main()
 	//setbuf(stdout, NULL);
 
 	//Play();
-	Bench();
+	//Bench(easy, 'b', easyDepths);
+	Bench(medium, 'b', mediumDepths);
 }
 
-void Bench()
+void Bench(const char * board, char player, const unsigned depths[])
 {
-	const char* hard =
-		"bbbb     "
-		" bb      "
-		"         "
-		" bb      "
-		"  bbww   "
-		"      ww "
-		"       w "
-		"      ww "
-		"     w ww";
+	MaxDepth = depths[0];
+	QuietDepth = depths[1];
+	LeafDepth = depths[2];
 	position Node;
-	Node.Set('b',hard);
+	Node.Set('b', board);
 	Node.Print();
 	move Move;
 	auto tstart = std::chrono::high_resolution_clock::now();

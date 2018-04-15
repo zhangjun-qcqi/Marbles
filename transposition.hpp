@@ -4,11 +4,7 @@
 //========================================================================
 #pragma once
 
-#include <cstdio>
-#include <algorithm>
-#include <numeric>
 #include "move.hpp"
-#include "color.hpp"
 
 struct transposition{ // transposition
 	int Lowerbound;
@@ -16,3 +12,27 @@ struct transposition{ // transposition
 	unsigned Depth;
 	move Move;
 };
+
+constexpr char* easy =
+"bbbb     "
+" bb      "
+"         "
+" bb      "
+"  bbww   "
+"      ww "
+"       w "
+"      ww "
+"     w ww";
+constexpr unsigned easyDepths[] = { 9, 7, 8 };
+
+constexpr char* medium =
+"b        "
+"bb b     "
+"bb bb    "
+"b b      "
+"    ww   "
+"      ww "
+"       w "
+"      ww "
+"     w ww";
+constexpr unsigned mediumDepths[] = { 11, 7, 9 };
