@@ -89,4 +89,7 @@ struct move{
 	bool operator==(const move& b) const {
 		return orig == b.orig && dest == b.dest;
 	}
+	bool operator!=(const move& b) const { return !operator==(b); }
 };
+
+move NullMove;

@@ -15,9 +15,9 @@
     </Expand>
   </Type>
   <Type Name="move">
-    <DisplayString>{orig},{dest},{score}</DisplayString>
+    <DisplayString>{orig},{dest}</DisplayString>
   </Type>
   <Type Name="transposition">
-    <DisplayString>{Score},{ScoreType},{Depth},[{Move}]</DisplayString>
+    <DisplayString>[{Lowerbound},{Upperbound}],{Depth},[{Move}]</DisplayString>
   </Type>
 </AutoVisualizer>

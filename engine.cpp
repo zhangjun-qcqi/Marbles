@@ -139,7 +139,7 @@ int AlphaBeta(position& Node,move& Move)
 }
 
 #ifndef NDEBUG
-constexpr unsigned long long ulls[] = {0x344140310055002, 0xD100800200005055};
+constexpr unsigned long long ulls[] = {0x0, 0x0};
 const hash wow = ulls2hash(ulls);
 #endif
 
@@ -180,6 +180,17 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	int best = CutoffTest(Depth, Moves, Index, MovesNo);
 	if (best != -NoCutOff)
 		return best; // terminal node does not need a move
+	if (hasOldT && oldT.Lowerbound != -NoCutOff && oldT.Depth <= Depth) {
+		if (oldT.Move != Moves[Index[0]]) { // move ordering
+			for (unsigned i = 0; i < MovesNo; i++) {
+				if (Moves[Index[i]] == oldT.Move) {
+					std::swap(Index[0], Index[i]);
+					printf("%u is old best\n", i);
+					break;
+				}
+			}
+		}
+	}
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[Index[i]];
 #ifdef DEBUG_MAKE_MOVE
@@ -212,13 +223,17 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 #endif
 	if (!isCorner && Depth < LeafDepth){ // ignore corners and leaves
 		transposition newT = { best, best, Depth, Move };
-		if (best <= alphaOrig)
+		if (best <= alphaOrig) {
 			newT.Lowerbound = -NoCutOff;
+			newT.Move = NullMove;
+		}
 		else if (best >= beta)
 			newT.Upperbound = NoCutOff;
 
 		if(hasOldT){
 			if (Depth == oldT.Depth) {
+				if (newT.Move == NullMove)
+					newT.Move = oldT.Move;
 				newT.Lowerbound = std::max(oldT.Lowerbound, newT.Lowerbound);
 				newT.Upperbound = std::min(oldT.Upperbound, newT.Upperbound);
 				TTable[Curr.Hash] = newT;
