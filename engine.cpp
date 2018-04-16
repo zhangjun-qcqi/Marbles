@@ -20,8 +20,7 @@ position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
 int usage;
 
-int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
-	unsigned& MovesNo);
+int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
@@ -54,7 +53,7 @@ void Bench(const char * board, char player, const unsigned depths[])
 	printf("score = %d\n", a);
 	Move.Print();
 	printf("%d / %zu = %f\n", usage, TTable.size(),
-		usage * 1.0 / TTable.size());
+		float(usage) / TTable.size());
 }
 
 void Play()
@@ -110,8 +109,7 @@ void Play()
 	}
 }
 
-int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
-	unsigned& MovesNo)
+int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 {
 	const int sign = Curr.WhiteTurn ? 1 : -1;
 	if (Curr.Score[0] == -Win)
@@ -180,9 +178,11 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		return best; // terminal node does not need a move
 	if (hasOldT && oldT.Lowerbound != -NoCutOff && oldT.Depth <= Depth) {
 		if (oldT.Move != Moves[0]) { // move ordering
-			unsigned i = std::find(Moves+1, Moves+MovesNo,oldT.Move)-Moves;
-			std::swap(Moves[0], Moves[i]);
-			printf("%u is old best\n", i);
+			size_t i = std::find(Moves+1, Moves+MovesNo,oldT.Move)-Moves;
+			if (i != MovesNo) {
+				std::swap(Moves[0], Moves[i]);
+				printf("%zu is old best from [0 %u)\n", i, MovesNo);
+			}
 		}
 	}
 	for(unsigned i=0;i<MovesNo;i++){
@@ -237,7 +237,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			}
 			else { // shallower score vs deeper score, which is better?
 				//Curr.Print();
-				printf("old is shallower\n");
+				printf("old is shallower [%d %d]@%u vs [%d %d]@%u\n",
+					oldT.Lowerbound, oldT.Upperbound, oldT.Depth,
+					newT.Lowerbound, newT.Upperbound, newT.Depth);
 			}
 		}
 		else

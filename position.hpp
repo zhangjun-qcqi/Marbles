@@ -39,7 +39,7 @@ struct position{ // positon
 	void Print(); 
 	void MakeMove(const move& m);
 	void UndoMove(const move& m);
-	unsigned ListMoves(move Moves[MaxBreadth], const bool quiet =false);
+	unsigned ListMoves(move Moves[MaxBreadth], const bool quiet = false);
 	bool operator== (const position& b);
 	bool operator!= (const position& b) { return !operator==(b);}
 };
@@ -137,8 +137,7 @@ void position::UndoMove(const move& m)
 }
 
 // list all possible moves of current position
-unsigned position::ListMoves(move Moves[MaxBreadth],
-	const bool quiet)
+unsigned position::ListMoves(move Moves[MaxBreadth], const bool quiet)
 {
 	unsigned MovesNo = 0;
 	unsigned start = WhiteTurn * 10;
