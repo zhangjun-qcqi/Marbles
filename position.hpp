@@ -39,8 +39,7 @@ struct position{ // positon
 	void Print(); 
 	void MakeMove(const move& m);
 	void UndoMove(const move& m);
-	unsigned ListMoves(move Moves[MaxBreadth], unsigned Index[MaxBreadth],
-		const bool quiet =false);
+	unsigned ListMoves(move Moves[MaxBreadth], const bool quiet =false);
 	bool operator== (const position& b);
 	bool operator!= (const position& b) { return !operator==(b);}
 };
@@ -139,7 +138,7 @@ void position::UndoMove(const move& m)
 
 // list all possible moves of current position
 unsigned position::ListMoves(move Moves[MaxBreadth],
-	unsigned Index[MaxBreadth], const bool quiet)
+	const bool quiet)
 {
 	unsigned MovesNo = 0;
 	unsigned start = WhiteTurn * 10;
@@ -193,12 +192,14 @@ unsigned position::ListMoves(move Moves[MaxBreadth],
 	for (unsigned i = 0; i < MovesNo; i++)
 		count2[Moves[i].Score()]++;
 	std::partial_sum(count, count + 33, count);
+	move Output[MaxBreadth];
 	for (unsigned i = MovesNo - 1; i < MovesNo; i--)
-		Index[--count2[Moves[i].Score()]] = i;
+		Output[--count2[Moves[i].Score()]] = Moves[i];
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
-		std::reverse(Index, Index + MovesNo);
+		std::reverse(Output, Output + MovesNo);
 	if (quiet) // drop <2 moves in quiescent search; drop >-2 moves for black
 		MovesNo = WhiteTurn ? MovesNo - count2[2] : count2[-1];
+	std::copy(Output, Output+MovesNo, Moves);
 	return MovesNo;
 }
 

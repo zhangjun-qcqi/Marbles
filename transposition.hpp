@@ -13,7 +13,7 @@ struct transposition{ // transposition
 	move Move;
 };
 
-constexpr char* easy =
+const char* easy =
 "bbbb     "
 " bb      "
 "         "
@@ -25,7 +25,7 @@ constexpr char* easy =
 "     w ww";
 constexpr unsigned easyDepths[] = { 9, 7, 8 };
 
-constexpr char* medium =
+const char* medium =
 "b        "
 "bb b     "
 "bb bb    "

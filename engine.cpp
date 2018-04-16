@@ -21,7 +21,7 @@ std::unordered_map<hash, transposition> TTable; // transposition table
 int usage;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
-	unsigned Index[MaxBreadth], unsigned& MovesNo);
+	unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
@@ -64,10 +64,9 @@ void Play()
 	Node.Print();
 	move Move;
 	move Moves[MaxBreadth];
-	unsigned Index[MaxBreadth];
 
 	while(true){
-		unsigned n = Node.ListMoves(Moves, Index);
+		unsigned n = Node.ListMoves(Moves);
 		char buf[20];
 		int ch;
 		while(fgets(buf,20,stdin)!=0){
@@ -112,7 +111,7 @@ void Play()
 }
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
-	unsigned Index[MaxBreadth], unsigned& MovesNo)
+	unsigned& MovesNo)
 {
 	const int sign = Curr.WhiteTurn ? 1 : -1;
 	if (Curr.Score[0] == -Win)
@@ -120,11 +119,11 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth],
 	if (Curr.Score[1] == Win)
 		return 2 * Win * sign;
 	if (Depth < QuietDepth) {
-		MovesNo = Curr.ListMoves(Moves, Index);// normal search
+		MovesNo = Curr.ListMoves(Moves);// normal search
 		return -NoCutOff;
 	}
 	if (Depth < MaxDepth) {
-		MovesNo = Curr.ListMoves(Moves, Index, true);// quiescent search
+		MovesNo = Curr.ListMoves(Moves, true);// quiescent search
 		if(MovesNo != 0) // noisy position
 			return -NoCutOff;
 	}
@@ -175,24 +174,19 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 
 	move Moves[MaxBreadth];//possible moves
-	unsigned Index[MaxBreadth];
 	unsigned MovesNo;
-	int best = CutoffTest(Depth, Moves, Index, MovesNo);
+	int best = CutoffTest(Depth, Moves, MovesNo);
 	if (best != -NoCutOff)
 		return best; // terminal node does not need a move
 	if (hasOldT && oldT.Lowerbound != -NoCutOff && oldT.Depth <= Depth) {
-		if (oldT.Move != Moves[Index[0]]) { // move ordering
-			for (unsigned i = 0; i < MovesNo; i++) {
-				if (Moves[Index[i]] == oldT.Move) {
-					std::swap(Index[0], Index[i]);
-					printf("%u is old best\n", i);
-					break;
-				}
-			}
+		if (oldT.Move != Moves[0]) { // move ordering
+			unsigned i = std::find(Moves+1, Moves+MovesNo,oldT.Move)-Moves;
+			std::swap(Moves[0], Moves[i]);
+			printf("%u is old best\n", i);
 		}
 	}
 	for(unsigned i=0;i<MovesNo;i++){
-		const move m = Moves[Index[i]];
+		const move m = Moves[i];
 #ifdef DEBUG_MAKE_MOVE
 		auto Old = Curr;
 #endif
