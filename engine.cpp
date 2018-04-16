@@ -11,8 +11,8 @@
 #include "move.hpp"
 #include "transposition.hpp"
 
-unsigned QuietDepth = 7; // start quiescent search since this depth
-unsigned MaxDepth = QuietDepth + 4; // max search depth
+unsigned MaxDepth = 11; // max search depth
+unsigned MaxEnergy = 7; // max energy to do bad moves
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
@@ -20,9 +20,10 @@ position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
 int usage;
 
-int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
+int CutoffTest(unsigned Depth, unsigned Energy,
+	move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
-int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
+int NegaMax(unsigned Depth, unsigned Energy, int alpha, int beta, move& Move);
 void Play();
 void Bench(const char * board, char player, const unsigned depths[]);
 
@@ -39,7 +40,7 @@ int main()
 void Bench(const char * board, char player, const unsigned depths[])
 {
 	MaxDepth = depths[0];
-	QuietDepth = depths[1];
+	MaxEnergy = depths[1];
 	LeafDepth = depths[2];
 	position Node;
 	Node.Set('b', board);
@@ -109,21 +110,24 @@ void Play()
 	}
 }
 
-int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
+int CutoffTest(unsigned Depth, unsigned Energy,
+	move Moves[MaxBreadth], unsigned& MovesNo)
 {
 	const int sign = Curr.WhiteTurn ? 1 : -1;
 	if (Curr.Score[0] == -Win)
 		return 2 * -Win * sign;
 	if (Curr.Score[1] == Win)
 		return 2 * Win * sign;
-	if (Depth < QuietDepth) {
-		MovesNo = Curr.ListMoves(Moves);// normal search
-		return -NoCutOff;
-	}
 	if (Depth < MaxDepth) {
-		MovesNo = Curr.ListMoves(Moves, true);// quiescent search
-		if(MovesNo != 0) // noisy position
+		if (Energy < MaxEnergy) {
+			MovesNo = Curr.ListMoves(Moves);// normal search
 			return -NoCutOff;
+		}
+		else {
+			MovesNo = Curr.ListMoves(Moves, true);// quiescent search
+			if (MovesNo != 0) // noisy position
+				return -NoCutOff;
+		}
 	}
 	//evaluate quiet position or max depth position
 	return (Curr.Score[0] + Curr.Score[1]) * sign;
@@ -132,7 +136,7 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 int AlphaBeta(position& Node,move& Move)
 {
 	Curr = Node;
-	return NegaMax(0, -NoCutOff, NoCutOff, Move);
+	return NegaMax(0, 0, -NoCutOff, NoCutOff, Move);
 }
 
 #ifndef NDEBUG
@@ -140,7 +144,7 @@ constexpr unsigned long long ulls[] = {0x0, 0x0};
 const hash wow = ulls2hash(ulls);
 #endif
 
-int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
+int NegaMax(unsigned Depth, unsigned Energy, int alpha, int beta, move& Move)
 {
 	int alphaOrig = alpha;
 	if(alpha==Win) return Win;//pre alpha-prune
@@ -173,7 +177,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 
 	move Moves[MaxBreadth];//possible moves
 	unsigned MovesNo;
-	int best = CutoffTest(Depth, Moves, MovesNo);
+	int best = CutoffTest(Depth, Energy, Moves, MovesNo);
 	if (best != -NoCutOff)
 		return best; // terminal node does not need a move
 	if (hasOldT && oldT.Lowerbound != -NoCutOff && oldT.Depth <= Depth) {
@@ -187,12 +191,14 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[i];
+		bool UseEnergy = Curr.WhiteTurn ? m.Score() < 2 : m.Score() > -2;
+
 #ifdef DEBUG_MAKE_MOVE
 		auto Old = Curr;
 #endif
 		Curr.MakeMove(m);
-		move dummy;
-		int score = -NegaMax(Depth+1, -beta, -alpha, dummy);
+		move _;
+		int score = -NegaMax(Depth + 1, Energy + UseEnergy, -beta, -alpha, _);
 		Curr.UndoMove(m);
 #ifdef DEBUG_MAKE_MOVE
 		if (Old != Curr) {

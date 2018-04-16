@@ -23,7 +23,7 @@ const char* easy =
 "       w "
 "      ww "
 "     w ww";
-constexpr unsigned easyDepths[] = { 9, 7, 8 };
+constexpr unsigned easyDepths[] = { 9, 3, 8 };
 
 const char* medium =
 "b        "
@@ -35,4 +35,4 @@ const char* medium =
 "       w "
 "      ww "
 "     w ww";
-constexpr unsigned mediumDepths[] = { 11, 7, 9 };
+constexpr unsigned mediumDepths[] = { 11, 4, 9 };
