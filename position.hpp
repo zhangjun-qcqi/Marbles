@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.4.14
+// 2012.9.8-2018.4.17
 //========================================================================
 #pragma once
 
@@ -11,7 +11,7 @@
 #include "move.hpp"
 #include "color.hpp"
 
-constexpr unsigned MaxBreadth = 126;
+constexpr unsigned MaxBreadth = 129;
 
 struct position{ // positon
 	std::array<unsigned,81> Board; // also the inverted index for coordinates
@@ -39,7 +39,7 @@ struct position{ // positon
 	void Print(); 
 	void MakeMove(const move& m);
 	void UndoMove(const move& m);
-	unsigned ListMoves(move Moves[MaxBreadth], const bool quiet = false);
+	unsigned ListMoves(move Moves[MaxBreadth], const int bar = 0);
 	bool operator== (const position& b);
 	bool operator!= (const position& b) { return !operator==(b);}
 };
@@ -137,13 +137,13 @@ void position::UndoMove(const move& m)
 }
 
 // list all possible moves of current position
-unsigned position::ListMoves(move Moves[MaxBreadth], const bool quiet)
+unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
 {
 	unsigned MovesNo = 0;
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
 		unsigned orig = Coordinate[i];
-		if (!quiet) { // only in quiescent search
+		if (bar < 2) { // only in quiescent search
 			// first list the adjacent moves
 			for (unsigned k = 0; k < Next[orig].AdjNo; k++) {
 				const unsigned dest = Next[orig].Adj[k];
@@ -199,8 +199,8 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const bool quiet)
 	// now count2[i] = first index of i
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
 		std::reverse(Output, Output + MovesNo);
-	if (quiet) // drop <2 moves in quiescent search; drop >-2 moves for black
-		MovesNo = WhiteTurn ? MovesNo - count2[2] : count2[-1];
+	if (bar != 0) // drop <2 moves in quiescent search; drop >-2 moves for black
+		MovesNo = WhiteTurn ? MovesNo - count2[bar] : count2[-bar + 1];
 	std::copy(Output, Output+MovesNo, Moves);
 	return MovesNo;
 }

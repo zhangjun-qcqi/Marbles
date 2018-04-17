@@ -1,6 +1,6 @@
 //========================================================================
 // transposition.cpp
-// 2018.4.9-2018.4.15
+// 2018.4.9-2018.4.17
 //========================================================================
 #pragma once
 
@@ -23,7 +23,8 @@ const char* easy =
 "       w "
 "      ww "
 "     w ww";
-constexpr unsigned easyDepths[] = { 9, 7, 8 };
+constexpr unsigned easyDepths[] = { 9, 8 };
+constexpr unsigned easyQuiets[] = { 2, 4, 7 };
 
 const char* medium =
 "b        "
@@ -35,4 +36,5 @@ const char* medium =
 "       w "
 "      ww "
 "     w ww";
-constexpr unsigned mediumDepths[] = { 11, 7, 9 };
+constexpr unsigned mediumDepths[] = { 11, 9 };
+constexpr unsigned mediumQuiets[] = { 3, 5, 7 };

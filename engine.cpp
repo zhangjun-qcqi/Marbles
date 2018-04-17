@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.4.14
+// 2012.9.7-2018.4.17
 //========================================================================
 #include <cstdio>
 #include <cstring>
@@ -11,9 +11,9 @@
 #include "move.hpp"
 #include "transposition.hpp"
 
-unsigned QuietDepth = 7; // start quiescent search since this depth
-unsigned MaxDepth = QuietDepth + 4; // max search depth
+unsigned MaxDepth = 11; // max search depth
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
+unsigned QuietDepths[] = {3, 5, 7};
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
@@ -24,7 +24,8 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
-void Bench(const char * board, char player, const unsigned depths[]);
+void Bench(const char * board, char player, const unsigned depths[],
+	const unsigned quiets[]);
 
 int main()
 {
@@ -32,15 +33,16 @@ int main()
 	//setbuf(stdout, NULL);
 
 	//Play();
-	//Bench(easy, 'b', easyDepths);
-	Bench(medium, 'b', mediumDepths);
+	Bench(easy, 'b', easyDepths, easyQuiets);
+	//Bench(medium, 'b', mediumDepths, mediumQuiets);
 }
 
-void Bench(const char * board, char player, const unsigned depths[])
+void Bench(const char * board, char player, const unsigned depths[],
+	const unsigned quiets[])
 {
 	MaxDepth = depths[0];
-	QuietDepth = depths[1];
-	LeafDepth = depths[2];
+	LeafDepth = depths[1];
+	std::copy(quiets, quiets + 3, QuietDepths);
 	position Node;
 	Node.Set('b', board);
 	Node.Print();
@@ -116,12 +118,10 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 		return 2 * -Win * sign;
 	if (Curr.Score[1] == Win)
 		return 2 * Win * sign;
-	if (Depth < QuietDepth) {
-		MovesNo = Curr.ListMoves(Moves);// normal search
-		return -NoCutOff;
-	}
+	unsigned bar = unsigned(std::lower_bound(QuietDepths, QuietDepths + 3,
+		Depth) - QuietDepths);
 	if (Depth < MaxDepth) {
-		MovesNo = Curr.ListMoves(Moves, true);// quiescent search
+		MovesNo = Curr.ListMoves(Moves, bar);// normal or quiescent search
 		if(MovesNo != 0) // noisy position
 			return -NoCutOff;
 	}
