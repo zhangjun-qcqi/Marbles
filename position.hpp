@@ -11,7 +11,7 @@
 #include "move.hpp"
 #include "color.hpp"
 
-constexpr unsigned MaxBreadth = 107;
+constexpr unsigned MaxBreadth = 126;
 
 struct position{ // positon
 	std::array<unsigned,81> Board; // also the inverted index for coordinates

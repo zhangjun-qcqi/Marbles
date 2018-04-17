@@ -191,8 +191,8 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		auto Old = Curr;
 #endif
 		Curr.MakeMove(m);
-		move dummy;
-		int score = -NegaMax(Depth+1, -beta, -alpha, dummy);
+		move _;
+		int score = -NegaMax(Depth+1, -beta, -alpha, _);
 		Curr.UndoMove(m);
 #ifdef DEBUG_MAKE_MOVE
 		if (Old != Curr) {
