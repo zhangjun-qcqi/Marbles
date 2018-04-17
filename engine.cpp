@@ -13,12 +13,13 @@
 
 unsigned MaxDepth = 11; // max search depth
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
-unsigned QuietDepths[] = {3, 5, 7};
+unsigned QuietDepths[] = {2, 4, 6};
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
-int usage;
+unsigned usage;
+unsigned ply;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
@@ -32,8 +33,8 @@ int main()
 	PreCompute();
 	//setbuf(stdout, NULL);
 
-	//Play();
-	Bench(easy, 'b', easyDepths, easyQuiets);
+	Play();
+	//Bench(easy, 'b', easyDepths, easyQuiets);
 	//Bench(medium, 'b', mediumDepths, mediumQuiets);
 }
 
@@ -101,13 +102,23 @@ void Play()
 		printf("time = %lld ms\n", std::chrono::duration_cast<
 			std::chrono::milliseconds>(tend - tstart).count());
 		printf("score = %d\n", Utility);
-		printf("%d / %zu = %f\n", usage, TTable.size(),
-			usage * 1.0 / TTable.size());
+		auto oldSize = TTable.size();
+		printf("%d / %zu = %f\n", usage, oldSize, (float)usage / oldSize);
 		Move.Print();
 		Node.MakeMove(Move);
 		Node.Print();
 		//TTable.clear();
+		for (auto it = TTable.begin(); it != TTable.end();) {
+			if (it->second.Age + 3 < ply)
+				it = TTable.erase(it);
+			else
+				++it;
+		}
+		auto newSize = TTable.size();
+		printf("ply=%u, %zu erased, %zu remaining\n", ply,
+			oldSize - newSize, newSize);
 		usage = 0;
+		ply++;
 	}
 }
 
@@ -157,6 +168,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		&& TTable.count(Curr.Hash) != 0){
 		oldT = TTable[Curr.Hash];
 		hasOldT = true;
+		TTable[Curr.Hash].Age = ply; // update age when access
 		if(oldT.Depth <= Depth){
 			usage++;
 			Move = oldT.Move;
@@ -181,7 +193,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			size_t i = std::find(Moves+1, Moves+MovesNo,oldT.Move)-Moves;
 			if (i != MovesNo) {
 				std::swap(Moves[0], Moves[i]);
-				printf("%zu is old best from [0 %u)\n", i, MovesNo);
+				printf("%zu is old best from %u\n", i, MovesNo);
 			}
 		}
 	}
@@ -216,7 +228,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 #endif
 	if (!isCorner && Depth < LeafDepth){ // ignore corners and leaves
-		transposition newT = { best, best, Depth, Move };
+		transposition newT = { best, best, Depth, Move, ply };
 		if (best <= alphaOrig) {
 			newT.Lowerbound = -NoCutOff;
 			newT.Move = NullMove;
@@ -237,9 +249,10 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			}
 			else { // shallower score vs deeper score, which is better?
 				//Curr.Print();
-				printf("old is shallower [%d %d]@%u vs [%d %d]@%u\n",
-					oldT.Lowerbound, oldT.Upperbound, oldT.Depth,
-					newT.Lowerbound, newT.Upperbound, newT.Depth);
+				printf("old is shallower [%d %d]@%u,%u vs [%d %d]@%u,%u\n",
+					oldT.Lowerbound, oldT.Upperbound, oldT.Depth, oldT.Age,
+					newT.Lowerbound, newT.Upperbound, newT.Depth, newT.Age);
+				TTable[Curr.Hash].Age = ply;
 			}
 		}
 		else

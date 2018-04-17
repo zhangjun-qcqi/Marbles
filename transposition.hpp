@@ -11,6 +11,7 @@ struct transposition{ // transposition
 	int Upperbound;
 	unsigned Depth;
 	move Move;
+	unsigned Age;
 };
 
 const char* easy =
