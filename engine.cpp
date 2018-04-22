@@ -107,7 +107,6 @@ void Play()
 		Move.Print();
 		Node.MakeMove(Move);
 		Node.Print();
-		//TTable.clear();
 		for (auto it = TTable.begin(); it != TTable.end();) {
 			if (it->second.Age + 3 < ply)
 				it = TTable.erase(it);
@@ -157,9 +156,8 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	if(alpha==Win) return Win;//pre alpha-prune
 
 #ifndef NDEBUG
-	if (Curr.Hash == wow) {
+	if (Curr.Hash == wow)
 		Curr.Print();
-	}
 #endif
 	bool isCorner = Curr.Hash[126]; // we don't use corner transpositions
 	transposition oldT;
@@ -199,19 +197,10 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 	for(unsigned i=0;i<MovesNo;i++){
 		const move m = Moves[i];
-#ifdef DEBUG_MAKE_MOVE
-		auto Old = Curr;
-#endif
 		Curr.MakeMove(m);
 		move _;
 		int score = -NegaMax(Depth+1, -beta, -alpha, _);
 		Curr.UndoMove(m);
-#ifdef DEBUG_MAKE_MOVE
-		if (Old != Curr) {
-			Curr.Print();
-			Old.Print();
-		}
-#endif
 		if (score > best) {
 			best = score;
 			Move = m;
@@ -223,9 +212,8 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	}
 
 #ifndef NDEBUG
-	if (Curr.Hash == wow) {
+	if (Curr.Hash == wow)
 		Curr.Print();
-	}
 #endif
 	if (!isCorner && Depth < LeafDepth){ // ignore corners and leaves
 		transposition newT = { best, best, Depth, Move, ply };

@@ -194,12 +194,12 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
 	std::partial_sum(count, count + 33, count);
 	// now count2[i] = first index of i+1
 	move Output[MaxBreadth];
-	for (unsigned i = MovesNo - 1; i < MovesNo; i--)
+	for (int i = MovesNo - 1; i >= 0; i--)
 		Output[--count2[Moves[i].Score()]] = Moves[i];
 	// now count2[i] = first index of i
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
 		std::reverse(Output, Output + MovesNo);
-	if (bar != 0) // drop <2 moves in quiescent search; drop >-2 moves for black
+	if (bar != 0) // drop <bar moves for white; >-bar moves for black
 		MovesNo = WhiteTurn ? MovesNo - count2[bar] : count2[-bar + 1];
 	std::copy(Output, Output+MovesNo, Moves);
 	return MovesNo;
