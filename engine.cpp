@@ -11,37 +11,34 @@
 #include "move.hpp"
 #include "transposition.hpp"
 
-struct engine {
-	unsigned MaxDepth = 11; // max search depth
-	unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
-	unsigned QuietDepths[3] = {2, 4, 6};
-	static constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
-	static constexpr int NoCutOff = 137; // also represents an impossible score
-	position Curr; // current position
-	std::unordered_map<hash, transposition> TTable; // transposition table
-	unsigned usage;
-	unsigned ply;
+unsigned MaxDepth = 11; // max search depth
+unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
+unsigned QuietDepths[] = {2, 4, 6};
+constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
+constexpr int NoCutOff = 137; // also represents an impossible score
+position Curr; // current position
+std::unordered_map<hash, transposition> TTable; // transposition table
+unsigned usage;
+unsigned ply;
 
-	int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
-	int AlphaBeta(position& Node,move& Move);
-	int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
-	void Play();
-	void Bench(const char * board, char player, const unsigned depths[],
-		const unsigned quiets[]);
-};
+int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
+int AlphaBeta(position& Node,move& Move);
+int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
+void Play();
+void Bench(const char * board, char player, const unsigned depths[],
+	const unsigned quiets[]);
 
 int main()
 {
 	PreCompute();
 	//setbuf(stdout, NULL);
 
-	engine Engine;
-	Engine.Play();
+	Play();
 	//Bench(easy, 'b', easyDepths, easyQuiets);
 	//Bench(medium, 'b', mediumDepths, mediumQuiets);
 }
 
-void engine::Bench(const char * board, char player, const unsigned depths[],
+void Bench(const char * board, char player, const unsigned depths[],
 	const unsigned quiets[])
 {
 	MaxDepth = depths[0];
@@ -62,7 +59,7 @@ void engine::Bench(const char * board, char player, const unsigned depths[],
 		float(usage) / TTable.size());
 }
 
-void engine::Play()
+void Play()
 {
 	position Node;
 	Node.Init();
@@ -124,7 +121,7 @@ void engine::Play()
 	}
 }
 
-int engine::CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
+int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 {
 	const int sign = Curr.WhiteTurn ? 1 : -1;
 	if (Curr.Score[0] == -Win)
@@ -142,7 +139,7 @@ int engine::CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo
 	return (Curr.Score[0] + Curr.Score[1]) * sign;
 }
 
-int engine::AlphaBeta(position& Node,move& Move)
+int AlphaBeta(position& Node,move& Move)
 {
 	Curr = Node;
 	return NegaMax(0, -NoCutOff, NoCutOff, Move);
@@ -153,7 +150,7 @@ constexpr unsigned long long ulls[] = {0x0, 0x0};
 const hash wow = ulls2hash(ulls);
 #endif
 
-int engine::NegaMax(unsigned Depth, int alpha, int beta, move& Move)
+int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 {
 	int alphaOrig = alpha;
 	if(alpha==Win) return Win;//pre alpha-prune
