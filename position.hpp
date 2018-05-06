@@ -11,7 +11,7 @@
 #include "move.hpp"
 #include "color.hpp"
 
-constexpr unsigned MaxBreadth = 129;
+constexpr unsigned MaxBreadth = 250;
 
 struct position{ // positon
 	std::array<unsigned,81> Board; // also the inverted index for coordinates
@@ -139,6 +139,7 @@ void position::UndoMove(const move& m)
 // list all possible moves of current position
 unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
 {
+	move Naive[MaxBreadth];
 	unsigned MovesNo = 0;
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
@@ -148,7 +149,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
 			for (unsigned k = 0; k < Next[orig].AdjNo; k++) {
 				const unsigned dest = Next[orig].Adj[k];
 				if (IsSpace(dest))
-					Moves[MovesNo++].Set(orig, dest);
+					Naive[MovesNo++].Set(orig, dest);
 			}
 		}
 
@@ -160,48 +161,46 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
 			const unsigned adj = Next[orig].HopAdj[k];
 			const unsigned dest = Next[orig].Hop[k];
 			if (IsMarble(adj) && IsSpace(dest)) {
-				Moves[MovesNo++].Set(orig, dest);
+				Naive[MovesNo++].Set(orig, dest);
 				visited[dest] = true;
 			}
 		}
 
 		// last loops all the multiple hop jumps
 		while (rear != MovesNo) {
-			const unsigned mid = Moves[rear].dest;
+			const unsigned mid = Naive[rear].dest;
 			for (unsigned k = 0; k < Next[mid].HopNo; k++) {
 				const unsigned adj = Next[mid].HopAdj[k];
 				const unsigned dest = Next[mid].Hop[k];
 				if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
-					Moves[MovesNo++].Set(orig, dest);
+					Naive[MovesNo++].Set(orig, dest);
 					visited[dest] = true;
 				}
 			}
 			rear++;
 		}
 	}
-	if (MovesNo > MaxBreadth) {
+	if (MovesNo > 129) {
 		printf("MovesNo=%d\n", MovesNo);
 		Print();
-		exit(0);
+		getchar();
 	}
 
 	// counting sort the index
 	unsigned count[33] = {};
 	unsigned* const count2 = count + 16;
 	for (unsigned i = 0; i < MovesNo; i++)
-		count2[Moves[i].Score()]++;
+		count2[Naive[i].Score()]++;
 	// now count2[i] = count of i
 	std::partial_sum(count, count + 33, count);
 	// now count2[i] = first index of i+1
-	move Output[MaxBreadth];
 	for (int i = MovesNo - 1; i >= 0; i--)
-		Output[--count2[Moves[i].Score()]] = Moves[i];
+		Moves[--count2[Naive[i].Score()]] = Naive[i];
 	// now count2[i] = first index of i
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
-		std::reverse(Output, Output + MovesNo);
+		std::reverse(Moves, Moves + MovesNo);
 	if (bar != 0) // drop <bar moves for white; >-bar moves for black
 		MovesNo = WhiteTurn ? MovesNo - count2[bar] : count2[-bar + 1];
-	std::copy(Output, Output+MovesNo, Moves);
 	return MovesNo;
 }
 

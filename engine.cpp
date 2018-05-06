@@ -25,7 +25,7 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
-void Bench(const char * board, char player, const unsigned depths[],
+void Bench(const char* board, char player, const unsigned depths[],
 	const unsigned quiets[]);
 
 int main()
@@ -33,9 +33,9 @@ int main()
 	PreCompute();
 	//setbuf(stdout, NULL);
 
-	Play();
+	//Play();
 	//Bench(easy, 'b', easyDepths, easyQuiets);
-	//Bench(medium, 'b', mediumDepths, mediumQuiets);
+	Bench(medium, 'b', mediumDepths, mediumQuiets);
 }
 
 void Bench(const char * board, char player, const unsigned depths[],
@@ -191,7 +191,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			size_t i = std::find(Moves+1, Moves+MovesNo,oldT.Move)-Moves;
 			if (i != MovesNo) {
 				std::swap(Moves[0], Moves[i]);
-				printf("%zu is old best from %u\n", i, MovesNo);
+				printf("pick %zu from %u\n", i, MovesNo);
 			}
 		}
 	}
@@ -237,7 +237,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			}
 			else { // shallower score vs deeper score, which is better?
 				//Curr.Print();
-				printf("old is shallower [%d %d]@%u,%u vs [%d %d]@%u,%u\n",
+				printf("[%d %d]@%u,%u vs [%d %d]@%u,%u\n",
 					oldT.Lowerbound, oldT.Upperbound, oldT.Depth, oldT.Age,
 					newT.Lowerbound, newT.Upperbound, newT.Depth, newT.Age);
 				TTable[Curr.Hash].Age = ply;

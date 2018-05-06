@@ -38,4 +38,4 @@ const char* medium =
 "      ww "
 "     w ww";
 constexpr unsigned mediumDepths[] = { 11, 9 };
-constexpr unsigned mediumQuiets[] = { 3, 5, 7 };
+constexpr unsigned mediumQuiets[] = { 4, 6, 8 };
