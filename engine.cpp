@@ -20,6 +20,7 @@ position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
 unsigned usage;
 unsigned ply;
+unsigned bucket;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
@@ -32,7 +33,7 @@ int main()
 {
 	PreCompute();
 	//setbuf(stdout, NULL);
-
+	TTable.reserve(4194304);
 	//Play();
 	//Bench(easy, 'b', easyDepths, easyQuiets);
 	Bench(medium, 'b', mediumDepths, mediumQuiets);
@@ -57,6 +58,8 @@ void Bench(const char * board, char player, const unsigned depths[],
 	Move.Print();
 	printf("%d / %zu = %f\n", usage, TTable.size(),
 		float(usage) / TTable.size());
+	printf("load factor = %f\n", TTable.load_factor());
+	printf("rehash = %d\n", bucket);
 }
 
 void Play()
@@ -243,8 +246,16 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 				TTable[Curr.Hash].Age = ply;
 			}
 		}
-		else
+		else {
+			auto OldBucket = TTable.bucket_count();
 			TTable[Curr.Hash] = newT;
+			auto NewBucket = TTable.bucket_count();
+			if (OldBucket != NewBucket) {
+				bucket++;
+				printf("rehash #%u : %zu to %zu\n",
+					bucket, OldBucket, NewBucket);
+			}
+		}
 	}
 	return best;
 }
