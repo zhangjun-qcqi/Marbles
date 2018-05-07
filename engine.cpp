@@ -33,7 +33,7 @@ int main()
 {
 	PreCompute();
 	//setbuf(stdout, NULL);
-	TTable.reserve(4194304);
+
 	//Play();
 	//Bench(easy, 'b', easyDepths, easyQuiets);
 	Bench(medium, 'b', mediumDepths, mediumQuiets);
@@ -247,9 +247,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			}
 		}
 		else {
-			auto OldBucket = TTable.bucket_count();
+			const auto OldBucket = TTable.bucket_count();
 			TTable[Curr.Hash] = newT;
-			auto NewBucket = TTable.bucket_count();
+			const auto NewBucket = TTable.bucket_count();
 			if (OldBucket != NewBucket) {
 				bucket++;
 				printf("rehash #%u : %zu to %zu\n",
