@@ -85,7 +85,7 @@ struct move{
 	void Set(const char b[]) {
 		Set((b[0] - '0') * 10 + b[1] - '0', (b[2] - '0') * 10 + b[3] - '0');
 	}
-	void Print() { printf("%02d%02d\n", orig, dest); }
+	void Print() const { printf("%02d%02d\n", orig, dest); }
 	bool operator==(const move& b) const {
 		return orig == b.orig && dest == b.dest;
 	}

@@ -35,13 +35,13 @@ struct position{ // positon
 	void Set(const char turn,const char board[]);
 	bool IsSpace(const unsigned b) const {return Board[b] == ' ';}
 	bool IsMarble(const unsigned b) const {return Board[b] != ' ';}
-	bool IsLegal(const char turn,const char board[]);
-	void Print(); 
+	bool IsLegal(const char turn,const char board[]) const;
+	void Print() const;
 	void MakeMove(const move& m);
 	void UndoMove(const move& m);
-	unsigned ListMoves(move Moves[MaxBreadth], const int bar = 0);
-	bool operator== (const position& b);
-	bool operator!= (const position& b) { return !operator==(b);}
+	unsigned ListMoves(move Moves[MaxBreadth], const int bar = 0) const;
+	bool operator== (const position& b) const;
+	bool operator!= (const position& b) const { return !operator==(b);}
 };
 
 // set current position using inputs
@@ -52,9 +52,7 @@ void position::Set(const char turn, const char board[])
 	unsigned black = 0;
 	Score[0] = 0;
 	Score[1] = 0;
-	Hash = 0;
-	if (WhiteTurn)
-		Hash ^= WhiteHash;
+	Hash = WhiteTurn ? WhiteHash : 0;
 	for (unsigned b = 0; b<81; b++) {
 		if (board[b] == 'b') {
 			Board[b] = black;
@@ -74,7 +72,7 @@ void position::Set(const char turn, const char board[])
 }
 
 // is input position legal?
-bool position::IsLegal(const char turn, const char board[])
+bool position::IsLegal(const char turn, const char board[]) const
 {
 	if (turn != 'b'&&turn != 'w')
 		return false;
@@ -87,7 +85,7 @@ bool position::IsLegal(const char turn, const char board[])
 }
 
 // print current position
-void position::Print()
+void position::Print() const
 {
 	for(int i=0;i<17;i++){
 		for (int j = 0; j < std::max(8 - i,i-8); j++) printf("  ");
@@ -137,7 +135,7 @@ void position::UndoMove(const move& m)
 }
 
 // list all possible moves of current position
-unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
+unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 {
 	move Naive[MaxBreadth];
 	unsigned MovesNo = 0;
@@ -204,11 +202,10 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar)
 	return MovesNo;
 }
 
-bool position::operator==(const position & b)
+bool position::operator==(const position & b) const
 {
-	return Board == b.Board
-		&& Coordinate == b.Coordinate
-		&& WhiteTurn == b.WhiteTurn
+	return Hash == b.Hash
 		&& Score == b.Score
-		&& Hash == b.Hash;
+		&& WhiteTurn == b.WhiteTurn
+		&& Board == b.Board;
 }

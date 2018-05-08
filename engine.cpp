@@ -18,9 +18,9 @@ constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
-unsigned usage;
-unsigned ply;
-unsigned bucket;
+unsigned Usage;
+unsigned Ply;
+unsigned Rehash;
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
@@ -56,10 +56,10 @@ void Bench(const char * board, char player, const unsigned depths[],
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", a);
 	Move.Print();
-	printf("%d / %zu = %f\n", usage, TTable.size(),
-		float(usage) / TTable.size());
+	printf("%d / %zu = %f\n", Usage, TTable.size(),
+		float(Usage) / TTable.size());
 	printf("load factor = %f\n", TTable.load_factor());
-	printf("rehash = %d\n", bucket);
+	printf("rehash = %d\n", Rehash);
 }
 
 void Play()
@@ -105,22 +105,22 @@ void Play()
 		printf("time = %lld ms\n", std::chrono::duration_cast<
 			std::chrono::milliseconds>(tend - tstart).count());
 		printf("score = %d\n", Utility);
-		auto oldSize = TTable.size();
-		printf("%d / %zu = %f\n", usage, oldSize, (float)usage / oldSize);
+		auto OldSize = TTable.size();
+		printf("%d / %zu = %f\n", Usage, OldSize, (float)Usage / OldSize);
 		Move.Print();
 		Node.MakeMove(Move);
 		Node.Print();
 		for (auto it = TTable.begin(); it != TTable.end();) {
-			if (it->second.Age + 3 < ply)
+			if (it->second.Age + 3 < Ply)
 				it = TTable.erase(it);
 			else
 				++it;
 		}
-		auto newSize = TTable.size();
-		printf("ply=%u, %zu erased, %zu remaining\n", ply,
-			oldSize - newSize, newSize);
-		usage = 0;
-		ply++;
+		auto NewSize = TTable.size();
+		printf("ply=%u, %zu erased, %zu remaining\n", Ply,
+			OldSize - NewSize, NewSize);
+		Usage = 0;
+		Ply++;
 	}
 }
 
@@ -169,9 +169,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		&& TTable.count(Curr.Hash) != 0){
 		oldT = TTable[Curr.Hash];
 		hasOldT = true;
-		TTable[Curr.Hash].Age = ply; // update age when access
+		TTable[Curr.Hash].Age = Ply; // update age when access
 		if(oldT.Depth <= Depth){
-			usage++;
+			Usage++;
 			Move = oldT.Move;
 			if(oldT.Lowerbound == oldT.Upperbound)
 				return oldT.Lowerbound;
@@ -219,7 +219,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		Curr.Print();
 #endif
 	if (!isCorner && Depth < LeafDepth){ // ignore corners and leaves
-		transposition newT = { best, best, Depth, Move, ply };
+		transposition newT = { best, best, Depth, Move, Ply };
 		if (best <= alphaOrig) {
 			newT.Lowerbound = -NoCutOff;
 			newT.Move = NullMove;
@@ -240,10 +240,10 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			}
 			else { // shallower score vs deeper score, which is better?
 				//Curr.Print();
-				printf("[%d %d]@%u,%u vs [%d %d]@%u,%u\n",
-					oldT.Lowerbound, oldT.Upperbound, oldT.Depth, oldT.Age,
-					newT.Lowerbound, newT.Upperbound, newT.Depth, newT.Age);
-				TTable[Curr.Hash].Age = ply;
+				printf("%u[%d %d]%u > %u[%d %d]%u\n",
+					oldT.Depth, oldT.Lowerbound, oldT.Upperbound, oldT.Age,
+					newT.Depth, newT.Lowerbound, newT.Upperbound, newT.Age);
+				TTable[Curr.Hash].Age = Ply;
 			}
 		}
 		else {
@@ -251,9 +251,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			TTable[Curr.Hash] = newT;
 			const auto NewBucket = TTable.bucket_count();
 			if (OldBucket != NewBucket) {
-				bucket++;
-				printf("rehash #%u : %zu to %zu\n",
-					bucket, OldBucket, NewBucket);
+				Rehash++;
+				printf("rehash %u: %zu > %zu\n",
+					Rehash, OldBucket, NewBucket);
 			}
 		}
 	}
