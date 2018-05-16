@@ -15,7 +15,6 @@ unsigned MaxDepth = 11; // max search depth
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 unsigned QuietDepths[] = {2, 4, 6};
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
-constexpr int NoCutOff = 137; // also represents an impossible score
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
 unsigned Usage;
@@ -239,10 +238,10 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 				TTable[Curr.Hash] = newT;
 			}
 			else { // shallower score vs deeper score, which is better?
-				//Curr.Print();
-				printf("%u[%d %d]%u > %u[%d %d]%u\n",
-					oldT.Depth, oldT.Lowerbound, oldT.Upperbound, oldT.Age,
-					newT.Depth, newT.Lowerbound, newT.Upperbound, newT.Age);
+				oldT.Print();
+				printf(" > ");
+				newT.Print();
+				printf("\n");
 				TTable[Curr.Hash].Age = Ply;
 			}
 		}
@@ -252,8 +251,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			const auto NewBucket = TTable.bucket_count();
 			if (OldBucket != NewBucket) {
 				Rehash++;
-				printf("rehash %u: %zu > %zu\n",
-					Rehash, OldBucket, NewBucket);
+				printf("rehash %u: %zu > %zu\n", Rehash, OldBucket, NewBucket);
 			}
 		}
 	}

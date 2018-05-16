@@ -1,2 +1,5 @@
 engine: engine.cpp color.hpp move.hpp position.hpp transposition.hpp
-	g++ -std=c++11 engine.cpp -O2 -o engine -DNDEBUG
+	g++ -O2 -std=c++11 engine.cpp -o engine -DNDEBUG
+
+run: engine
+	./engine

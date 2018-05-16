@@ -4,7 +4,10 @@
 //========================================================================
 #pragma once
 
+#include <cstdio>
 #include "move.hpp"
+
+constexpr int NoCutOff = 137; // also represents an impossible score
 
 struct transposition{ // transposition
 	int Lowerbound;
@@ -12,6 +15,10 @@ struct transposition{ // transposition
 	unsigned Depth;
 	move Move;
 	unsigned Age;
+
+	void Print() const {
+		printf("%u[%d %d]%u", Depth, Lowerbound, Upperbound, Age);
+	}
 };
 
 const char* easy =

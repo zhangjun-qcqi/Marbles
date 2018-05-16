@@ -6,6 +6,7 @@
 
 #include <cstdio>
 #include <bitset>
+#include <climits>
 
 int Scores[81];
 typedef std::bitset<128> hash;
