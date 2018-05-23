@@ -161,10 +161,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	if (Curr.Hash == wow)
 		Curr.Print();
 #endif
-	bool isCorner = Curr.Hash[126]; // we don't use corner transpositions
 	transposition oldT;
 	bool hasOldT = false;
-	if(!isCorner && Depth < LeafDepth // ignore corners and leaves
+	if(Depth < LeafDepth // ignore leaves
 		&& TTable.count(Curr.Hash) != 0){
 		oldT = TTable[Curr.Hash];
 		hasOldT = true;
@@ -217,7 +216,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 	if (Curr.Hash == wow)
 		Curr.Print();
 #endif
-	if (!isCorner && Depth < LeafDepth){ // ignore corners and leaves
+	if (Depth < LeafDepth){ // ignore leaves
 		transposition newT = { best, best, Depth, Move, Ply };
 		if (best <= alphaOrig) {
 			newT.Lowerbound = -NoCutOff;

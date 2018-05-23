@@ -9,7 +9,7 @@
 #include <climits>
 
 int Scores[81];
-typedef std::bitset<128> hash;
+typedef std::bitset<163> hash;
 hash Hashes[81][2];
 hash WhiteHash;
 struct {
@@ -31,9 +31,7 @@ void PreCompute()
 		{ 1,0 },//down
 		{ 0,1 },//right
 	};
-	constexpr unsigned corners[20] = { 5, 6, 7, 8, 15, 16, 17, 25, 26, 35,
-		45, 54, 55, 63, 64, 65, 72, 73, 74 ,75 };
-	WhiteHash.set(127);
+	WhiteHash.set(162);
 	unsigned bit = 0;
 	for (unsigned b = 0; b < 81; b++) {
 		const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
@@ -52,21 +50,15 @@ void PreCompute()
 				}
 			}
 		}
-		if (std::binary_search(corners, corners + 20, b)) {
-			Hashes[b][0].set(126);
-			Hashes[b][1].set(126);
-		}
-		else {
-			Hashes[b][0].set(bit++);
-			Hashes[b][1].set(bit++);
-		}
+		Hashes[b][0].set(bit++);
+		Hashes[b][1].set(bit++);
 	}
 }
 
 void hash2ulls(const hash& h, unsigned long long ulls[2])
 {
 	constexpr hash mask = ULLONG_MAX;
-	ulls[0] = (h >> 64).to_ullong();
+	ulls[0] = (h >> 64 & mask).to_ullong();
 	ulls[1] = (h & mask).to_ullong();
 }
 
