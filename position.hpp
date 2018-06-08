@@ -100,10 +100,10 @@ void position::Print() const
 		}
 		printf("\n");
 	}
-	unsigned long long ulls[2];
+	unsigned long long ulls[3];
 	hash2ulls(Hash, ulls);
-	printf("%d [%d %d] %016llX-%016llX\n",
-		WhiteTurn, Score[0], Score[1], ulls[0], ulls[1]);
+	printf("%d [%d %d] %llX-%llX-%llX\n",
+		WhiteTurn, Score[0], Score[1], ulls[0], ulls[1], ulls[2]);
 }
 
 // apply the move on current position

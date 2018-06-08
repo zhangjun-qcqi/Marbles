@@ -55,18 +55,21 @@ void PreCompute()
 	}
 }
 
-void hash2ulls(const hash& h, unsigned long long ulls[2])
+void hash2ulls(const hash& h, unsigned long long ulls[3])
 {
 	constexpr hash mask = ULLONG_MAX;
-	ulls[0] = (h >> 64 & mask).to_ullong();
-	ulls[1] = (h & mask).to_ullong();
+	ulls[0] = (h >> 128 & mask).to_ullong();
+	ulls[1] = (h >> 64 & mask).to_ullong();
+	ulls[2] = (h & mask).to_ullong();
 }
 
-hash ulls2hash(const unsigned long long ulls[2])
+hash ulls2hash(const unsigned long long ulls[3])
 {
 	hash h = ulls[0];
 	h <<= 64;
 	h ^= ulls[1];
+	h <<= 64;
+	h ^= ulls[2];
 	return h;
 }
 

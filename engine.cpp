@@ -148,7 +148,7 @@ int AlphaBeta(position& Node,move& Move)
 }
 
 #ifndef NDEBUG
-constexpr unsigned long long ulls[] = {0x0, 0x0};
+constexpr unsigned long long ulls[] = {0x0, 0x0, 0x0};
 const hash wow = ulls2hash(ulls);
 #endif
 
