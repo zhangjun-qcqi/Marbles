@@ -3,3 +3,6 @@ engine: engine.cpp color.hpp move.hpp position.hpp transposition.hpp
 
 run: engine
 	./engine
+
+clean:
+	-rm engine
