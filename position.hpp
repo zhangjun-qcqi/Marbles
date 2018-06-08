@@ -156,7 +156,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 
 		// then list the one hop jumps
 		for (unsigned k = 0; k < Next[orig].HopNo; k++) {
-			const unsigned adj = Next[orig].HopAdj[k];
+			const unsigned adj = Next[orig].Adj[k];
 			const unsigned dest = Next[orig].Hop[k];
 			if (IsMarble(adj) && IsSpace(dest)) {
 				Naive[MovesNo++].Set(orig, dest);
@@ -168,7 +168,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 		while (rear != MovesNo) {
 			const unsigned mid = Naive[rear].dest;
 			for (unsigned k = 0; k < Next[mid].HopNo; k++) {
-				const unsigned adj = Next[mid].HopAdj[k];
+				const unsigned adj = Next[mid].Adj[k];
 				const unsigned dest = Next[mid].Hop[k];
 				if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
 					Naive[MovesNo++].Set(orig, dest);

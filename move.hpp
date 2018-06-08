@@ -14,9 +14,8 @@ hash Hashes[81][2];
 hash WhiteHash;
 struct {
 	unsigned AdjNo;
-	unsigned Adj[6];
+	unsigned Adj[6]; // first with hops, then adj-only; thus AdjNo >= HopNo
 	unsigned HopNo;
-	unsigned HopAdj[6]; // the adj that can hop
 	unsigned Hop[6];
 } Next[81];
 
@@ -32,26 +31,32 @@ void PreCompute()
 		{ 0,1 },//right
 	};
 	WhiteHash.set(162);
-	unsigned bit = 0;
 	for (unsigned b = 0; b < 81; b++) {
 		const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
 		const unsigned j = b % 9;
 		Scores[b] = 8 - (i + j);// based on white's view; middle line is 0
+		unsigned Adj[6];
+		unsigned AdjNo = 0;
 		for (unsigned k = 0; k < 6; k++) {
 			const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
 			const unsigned j2 = j + offsets[k][1];
 			if (i2 < 9 && j2 < 9) {
-				Next[b].Adj[Next[b].AdjNo++] = i2 * 9 + j2;
 				const unsigned i3 = i2 + offsets[k][0];
 				const unsigned j3 = j2 + offsets[k][1];
 				if (i3 < 9 && j3 < 9) {
-					Next[b].HopAdj[Next[b].HopNo] = i2 * 9 + j2;
+					Next[b].Adj[Next[b].AdjNo++] = i2 * 9 + j2;
 					Next[b].Hop[Next[b].HopNo++] = i3 * 9 + j3;
+				}
+				else {
+					Adj[AdjNo++] = i2 * 9 + j2;
 				}
 			}
 		}
-		Hashes[b][0].set(bit++);
-		Hashes[b][1].set(bit++);
+		for (unsigned k = 0; k < AdjNo; k++) {
+			Next[b].Adj[Next[b].AdjNo++] = Adj[k];
+		}
+		Hashes[b][0].set(b * 2);
+		Hashes[b][1].set(b * 2 + 1);
 	}
 }
 
