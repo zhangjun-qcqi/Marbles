@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.4.17
+// 2012.9.8-2018.6.9
 //========================================================================
 #pragma once
 
@@ -141,7 +141,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	unsigned MovesNo = 0;
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
-		unsigned orig = Coordinate[i];
+		const unsigned orig = Coordinate[i];
 		if (bar < 2) { // only in quiescent search
 			// first list the adjacent moves
 			for (unsigned k = 0; k < Next[orig].AdjNo; k++) {

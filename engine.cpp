@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.4.17
+// 2012.9.7-2018.6.9
 //========================================================================
 #include <cstdio>
 #include <cstring>
@@ -14,6 +14,8 @@
 unsigned MaxDepth = 11; // max search depth
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 unsigned QuietDepths[] = {2, 4, 6};
+constexpr int QuietLevels = sizeof(QuietDepths) / sizeof(QuietDepths[0]);
+unsigned QuietCache[17];
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
@@ -27,6 +29,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
 void Bench(const char* board, char player, const unsigned depths[],
 	const unsigned quiets[]);
+void PrepareQuietCache();
 
 int main()
 {
@@ -38,12 +41,22 @@ int main()
 	Bench(medium, 'b', mediumDepths, mediumQuiets);
 }
 
+void PrepareQuietCache()
+{
+	for (unsigned d = 0; d < MaxDepth; d++) {
+		QuietCache[d] = unsigned(std::lower_bound(QuietDepths,
+			QuietDepths + QuietLevels, d) - QuietDepths);
+	}
+}
+
 void Bench(const char * board, char player, const unsigned depths[],
 	const unsigned quiets[])
 {
 	MaxDepth = depths[0];
 	LeafDepth = depths[1];
-	std::copy(quiets, quiets + 3, QuietDepths);
+	std::copy(quiets, quiets + QuietLevels, QuietDepths);
+	PrepareQuietCache();
+
 	position Node;
 	Node.Set('b', board);
 	Node.Print();
@@ -63,6 +76,8 @@ void Bench(const char * board, char player, const unsigned depths[],
 
 void Play()
 {
+	PrepareQuietCache();
+
 	position Node;
 	Node.Init();
 	Node.Print();
@@ -130,10 +145,8 @@ int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 		return 2 * -Win * sign;
 	if (Curr.Score[1] == Win)
 		return 2 * Win * sign;
-	unsigned bar = unsigned(std::lower_bound(QuietDepths, QuietDepths + 3,
-		Depth) - QuietDepths);
-	if (Depth < MaxDepth) {
-		MovesNo = Curr.ListMoves(Moves, bar);// normal or quiescent search
+	if (Depth < MaxDepth) { // normal or quiescent search
+		MovesNo = Curr.ListMoves(Moves, QuietCache[Depth]);
 		if(MovesNo != 0) // noisy position
 			return -NoCutOff;
 	}
