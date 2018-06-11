@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.6.9
+// 2012.9.8-2018.6.11
 //========================================================================
 #pragma once
 
@@ -197,8 +197,9 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	// now count2[i] = first index of i
 	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
 		std::reverse(Moves, Moves + MovesNo);
-	if (bar != 0) // drop <bar moves for white; >-bar moves for black
+	if (bar != -16) // drop <bar moves for white; >-bar moves for black
 		MovesNo = WhiteTurn ? MovesNo - count2[bar] : count2[-bar + 1];
+
 	return MovesNo;
 }
 

@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.6.9
+// 2012.9.7-2018.6.11
 //========================================================================
 #include <cstdio>
 #include <cstring>
@@ -15,7 +15,7 @@ unsigned MaxDepth = 11; // max search depth
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
 unsigned QuietDepths[] = {2, 4, 6};
 constexpr int QuietLevels = sizeof(QuietDepths) / sizeof(QuietDepths[0]);
-unsigned QuietCache[17];
+int QuietCache[17];
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
@@ -43,9 +43,10 @@ int main()
 
 void PrepareQuietCache()
 {
+    constexpr int Bars[QuietLevels + 1] = {-16, 1, 2, 4};
 	for (unsigned d = 0; d < MaxDepth; d++) {
-		QuietCache[d] = unsigned(std::lower_bound(QuietDepths,
-			QuietDepths + QuietLevels, d) - QuietDepths);
+		QuietCache[d] = Bars[std::lower_bound(QuietDepths,
+			QuietDepths + QuietLevels, d) - QuietDepths];
 	}
 }
 
