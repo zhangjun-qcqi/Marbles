@@ -1,6 +1,6 @@
 //========================================================================
 // move.hpp
-// 2012.9.8-2018.4.14
+// 2012.9.8-2018.6.11
 //========================================================================
 #pragma once
 
@@ -82,7 +82,8 @@ struct move{
 	unsigned orig,dest;
 
 	void Set(const unsigned o, const unsigned d) { orig = o; dest = d; }
-	int Score() const{ return Scores[dest] - Scores[orig];}
+	int Score() const { return Scores[dest] - Scores[orig];}
+	int NegaScore() const { return Scores[orig] - Scores[dest];}
 	void Set(const char b[]) {
 		Set((b[0] - '0') * 10 + b[1] - '0', (b[2] - '0') * 10 + b[3] - '0');
 	}

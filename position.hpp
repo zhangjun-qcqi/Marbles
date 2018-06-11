@@ -184,22 +184,27 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 		getchar();
 	}
 
+	int MoveScores[MaxBreadth];
+	if (WhiteTurn)
+		for (unsigned i = 0; i < MovesNo; i++)
+			MoveScores[i] = Naive[i].NegaScore();
+	else
+		for (unsigned i = 0; i < MovesNo; i++)
+			MoveScores[i] = Naive[i].Score();
+
 	// counting sort the index
 	unsigned count[33] = {};
 	unsigned* const count2 = count + 16;
 	for (unsigned i = 0; i < MovesNo; i++)
-		count2[Naive[i].Score()]++;
+		count2[MoveScores[i]]++;
 	// now count2[i] = count of i
 	std::partial_sum(count, count + 33, count);
 	// now count2[i] = first index of i+1
 	for (int i = MovesNo - 1; i >= 0; i--)
-		Moves[--count2[Naive[i].Score()]] = Naive[i];
+		Moves[--count2[MoveScores[i]]] = Naive[i];
 	// now count2[i] = first index of i
-	if (WhiteTurn) // default ascending, so reverse the moves in white's turn
-		std::reverse(Moves, Moves + MovesNo);
 	if (bar != -16) // drop <bar moves for white; >-bar moves for black
-		MovesNo = WhiteTurn ? MovesNo - count2[bar] : count2[-bar + 1];
-
+		MovesNo = count2[-bar + 1];
 	return MovesNo;
 }
 
