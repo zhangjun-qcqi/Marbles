@@ -191,22 +191,20 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 		const int s = Naive[i].Score() * sign;
 		if (s <= -bar) { // drop <bar moves for white; >-bar moves for black
 			Naive[j] = Naive[i];
-			MoveScores[j] = s;
-			j++;
+			MoveScores[j++] = s + 16; // shift the scores to be all >= 0
 		}
 	}
 	MovesNo = j;
 
 	// counting sort the index
 	unsigned count[33] = {};
-	unsigned* const count2 = count + 16;
 	for (unsigned i = 0; i < MovesNo; i++)
-		count2[MoveScores[i]]++;
-	// now count2[i] = count of i
+		count[MoveScores[i]]++;
+	// now count[i] = count of i
 	std::partial_sum(count, count + 33, count);
-	// now count2[i] = first index of i+1
+	// now count[i] = first index of i+1
 	for (int i = MovesNo - 1; i >= 0; i--)
-		Moves[--count2[MoveScores[i]]] = Naive[i];
+		Moves[--count[MoveScores[i]]] = Naive[i];
 	return MovesNo;
 }
 
