@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.6.11
+// 2012.9.8-2018.6.12
 //========================================================================
 #pragma once
 
@@ -185,12 +185,17 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	}
 
 	int MoveScores[MaxBreadth];
-	if (WhiteTurn)
-		for (unsigned i = 0; i < MovesNo; i++)
-			MoveScores[i] = Naive[i].NegaScore();
-	else
-		for (unsigned i = 0; i < MovesNo; i++)
-			MoveScores[i] = Naive[i].Score();
+	unsigned j = 0;
+	const int sign = WhiteTurn ? -1 : 1;
+	for (unsigned i = 0; i < MovesNo; i++) {
+		const int s = Naive[i].Score() * sign;
+		if (s <= -bar) { // drop <bar moves for white; >-bar moves for black
+			Naive[j] = Naive[i];
+			MoveScores[j] = s;
+			j++;
+		}
+	}
+	MovesNo = j;
 
 	// counting sort the index
 	unsigned count[33] = {};
@@ -202,9 +207,6 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	// now count2[i] = first index of i+1
 	for (int i = MovesNo - 1; i >= 0; i--)
 		Moves[--count2[MoveScores[i]]] = Naive[i];
-	// now count2[i] = first index of i
-	if (bar != -16) // drop <bar moves for white; >-bar moves for black
-		MovesNo = count2[-bar + 1];
 	return MovesNo;
 }
 
