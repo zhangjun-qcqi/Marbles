@@ -6,6 +6,7 @@
 !/**/
 !*.*
 !Makefile
+*.patch
 
 # macOS
 .DS_Store
