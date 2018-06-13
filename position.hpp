@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.6.12
+// 2012.9.8-2018.6.13
 //========================================================================
 #pragma once
 
@@ -139,6 +139,12 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 {
 	move Naive[MaxBreadth];
 	unsigned MovesNo = 0;
+
+	unsigned ChainIds[81] = {};
+	unsigned LastChain = 1; // the 0th chain is not used
+	unsigned Chains[20][20];
+	unsigned ChainNos[20] = {};
+
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
 		const unsigned orig = Coordinate[i];
@@ -150,32 +156,45 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 					Naive[MovesNo++].Set(orig, dest);
 			}
 		}
-
-		unsigned rear = MovesNo; // prepare the queue
+		// then list the hop jumps
 		bool visited[81] = {};
-
-		// then list the one hop jumps
 		for (unsigned k = 0; k < Next[orig].HopNo; k++) {
 			const unsigned adj = Next[orig].Adj[k];
 			const unsigned dest = Next[orig].Hop[k];
-			if (IsMarble(adj) && IsSpace(dest)) {
-				Naive[MovesNo++].Set(orig, dest);
-				visited[dest] = true;
-			}
-		}
-
-		// last loops all the multiple hop jumps
-		while (rear != MovesNo) {
-			const unsigned mid = Naive[rear].dest;
-			for (unsigned k = 0; k < Next[mid].HopNo; k++) {
-				const unsigned adj = Next[mid].Adj[k];
-				const unsigned dest = Next[mid].Hop[k];
-				if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
+			if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
+				const unsigned ChainId = ChainIds[dest];
+				if (ChainId != 0) { // already in the chains
+					for (unsigned j = 0; j < ChainNos[ChainId]; j++) {
+						const unsigned c = Chains[ChainId][j];
+						Naive[MovesNo++].Set(orig, c);
+						visited[c] = true;
+					}
+				}
+				else { // find the new chain
+					unsigned Rear = MovesNo; // prepare the queue
 					Naive[MovesNo++].Set(orig, dest);
 					visited[dest] = true;
+					ChainIds[dest] = LastChain;
+					unsigned ChainNo = 0;
+					Chains[LastChain][ChainNo++] = dest;
+					while (Rear != MovesNo) {
+						const unsigned mid = Naive[Rear].dest;
+						for (unsigned k = 0; k < Next[mid].HopNo; k++) {
+							const unsigned adj = Next[mid].Adj[k];
+							const unsigned dest = Next[mid].Hop[k];
+							if (IsMarble(adj) && IsSpace(dest)
+								&& !visited[dest]) {
+								Naive[MovesNo++].Set(orig, dest);
+								visited[dest] = true;
+								ChainIds[dest] = LastChain;
+								Chains[LastChain][ChainNo++] = dest;
+							}
+						}
+						Rear++;
+					}
+					ChainNos[LastChain++] = ChainNo;
 				}
 			}
-			rear++;
 		}
 	}
 	if (MovesNo > 129) {
