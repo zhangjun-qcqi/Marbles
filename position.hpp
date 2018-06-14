@@ -143,7 +143,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	unsigned ChainIds[81] = {};
 	unsigned LastChain = 1; // the 0th chain is not used
 	unsigned Chains[81];
-	unsigned ChainStarts[24] = {}; // I bet 23 chains are enough
+	unsigned ChainStarts[24] = {[1] = 0}; // I bet 23 chains are enough
 
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
