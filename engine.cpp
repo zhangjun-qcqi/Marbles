@@ -115,6 +115,14 @@ void Play()
 		}
 		printf("thinking...\n");
 		auto tstart = std::chrono::high_resolution_clock::now();
+		if (Node.Score[0] == -Win) {
+			printf("black wins\n");
+			break;
+		}
+		if (Node.Score[1] == Win) {
+			printf("white wins\n");
+			break;
+		}
 		int Utility = AlphaBeta(Node,Move);
 		auto tend = std::chrono::high_resolution_clock::now();
 		printf("time = %lld ms\n", std::chrono::duration_cast<
@@ -141,18 +149,18 @@ void Play()
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 {
-	const int sign = Curr.WhiteTurn ? 1 : -1;
-	if (Curr.Score[0] == -Win)
-		return 2 * -Win * sign;
-	if (Curr.Score[1] == Win)
-		return 2 * Win * sign;
-	if (Depth < MaxDepth) { // normal or quiescent search
+	if (Depth < MaxDepth && Curr.Score[0] != -Win && Curr.Score[1] != Win) {
+		// normal or quiescent search
 		MovesNo = Curr.ListMoves(Moves, QuietCache[Depth]);
 		if(MovesNo != 0) // noisy position
 			return -NoCutOff;
 	}
-	//evaluate quiet position or max depth position
-	return (Curr.Score[0] + Curr.Score[1]) * sign;
+	//evaluate quiet position or max depth position or terminal position
+	const int s = Curr.Score[0] + Curr.Score[1];
+	if (Curr.WhiteTurn)
+		return s;
+	else
+		return -s;
 }
 
 int AlphaBeta(position& Node,move& Move)
