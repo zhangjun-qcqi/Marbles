@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.6.13
+// 2012.9.8-2018.6.14
 //========================================================================
 #pragma once
 
@@ -142,8 +142,8 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 
 	unsigned ChainIds[81] = {};
 	unsigned LastChain = 1; // the 0th chain is not used
-	unsigned Chains[20][20];
-	unsigned ChainNos[20] = {};
+	unsigned Chains[81];
+	unsigned ChainStarts[24] = {}; // I bet 23 chains are enough
 
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
@@ -164,21 +164,22 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 			if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
 				const unsigned ChainId = ChainIds[dest];
 				if (ChainId != 0) { // already in the chains
-					for (unsigned j = 0; j < ChainNos[ChainId]; j++) {
-						const unsigned c = Chains[ChainId][j];
+					for (unsigned j = ChainStarts[ChainId];
+						j < ChainStarts[ChainId + 1]; j++) {
+						const unsigned c = Chains[j];
 						Naive[MovesNo++].Set(orig, c);
 						visited[c] = true;
 					}
 				}
 				else { // find the new chain
-					unsigned Rear = MovesNo; // prepare the queue
+					unsigned Rear = MovesNo; // prepare the queue of BFS
 					Naive[MovesNo++].Set(orig, dest);
 					visited[dest] = true;
 					ChainIds[dest] = LastChain;
-					unsigned ChainNo = 0;
-					Chains[LastChain][ChainNo++] = dest;
+					unsigned ChainStart = ChainStarts[LastChain];
+					Chains[ChainStart++] = dest;
 					while (Rear != MovesNo) {
-						const unsigned mid = Naive[Rear].dest;
+						const unsigned mid = Naive[Rear++].dest;
 						for (unsigned k = 0; k < Next[mid].HopNo; k++) {
 							const unsigned adj = Next[mid].Adj[k];
 							const unsigned dest = Next[mid].Hop[k];
@@ -187,12 +188,11 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 								Naive[MovesNo++].Set(orig, dest);
 								visited[dest] = true;
 								ChainIds[dest] = LastChain;
-								Chains[LastChain][ChainNo++] = dest;
+								Chains[ChainStart++] = dest;
 							}
 						}
-						Rear++;
 					}
-					ChainNos[LastChain++] = ChainNo;
+					ChainStarts[++LastChain] = ChainStart;
 				}
 			}
 		}
