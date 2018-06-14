@@ -64,7 +64,7 @@ void position::Set(const char turn, const char board[])
 			Board[b] = white;
 			Coordinate[white++] = b;
 			Score[1] += Scores[b];
-			Hash ^= Hashes[b][0];
+			Hash ^= Hashes[b][1];
 		}
 		else
 			Board[b] = ' ';
