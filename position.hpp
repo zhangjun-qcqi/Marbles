@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.6.14
+// 2012.9.8-2018.6.17
 //========================================================================
 #pragma once
 
@@ -19,6 +19,11 @@ struct position{ // positon
 	bool WhiteTurn; // true if it is white's turn
 	std::array<int,2> Score; // scores for black and white
 	hash Hash; // Zobrist hashing
+	unsigned ChainIds[81]; // the chain id of each cell
+	unsigned Chains[81][20]; // chains
+	unsigned ChainSizes[81]; // size of each chains
+	unsigned EmptyChainSlots[81]; // unused chain slots
+	unsigned EmptyChainNo;
 
 	constexpr static const char* init =
 		"bbbb     "
@@ -42,6 +47,10 @@ struct position{ // positon
 	unsigned ListMoves(move Moves[MaxBreadth], const int bar = 0) const;
 	bool operator== (const position& b) const;
 	bool operator!= (const position& b) const { return !operator==(b);}
+	void Place(const unsigned b);
+	void Take(const unsigned b);
+	void Merge(const unsigned c1, const unsigned c2);
+	void Split(const unsigned b, bool Ignoreb = true);
 };
 
 // set current position using inputs
@@ -53,21 +62,28 @@ void position::Set(const char turn, const char board[])
 	Score[0] = 0;
 	Score[1] = 0;
 	Hash = WhiteTurn ? WhiteHash : 0;
+	for (unsigned b = 0; b < 81; b++) {
+		ChainIds[b] = b;
+		Chains[b][0] = b;
+		ChainSizes[b] = 1;
+		Board[b] = ' ';
+	}
+	EmptyChainNo = 0;
 	for (unsigned b = 0; b<81; b++) {
 		if (board[b] == 'b') {
 			Board[b] = black;
 			Coordinate[black++] = b;
 			Score[0] += Scores[b];
 			Hash ^= Hashes[b][0];
+			Place(b);
 		}
 		else if (board[b] == 'w') {
 			Board[b] = white;
 			Coordinate[white++] = b;
 			Score[1] += Scores[b];
 			Hash ^= Hashes[b][1];
+			Place(b);
 		}
-		else
-			Board[b] = ' ';
 	}
 }
 
@@ -104,6 +120,18 @@ void position::Print() const
 	hash2ulls(Hash, ulls);
 	printf("%d [%d %d] %llX-%llX-%llX\n",
 		WhiteTurn, Score[0], Score[1], ulls[0], ulls[1], ulls[2]);
+#ifndef NDEBUG
+	for (unsigned b = 0; b < 81; b++) {
+		if (IsSpace(b)) {
+			if (ChainSizes[ChainIds[b]] > 1) {
+				printf("%u: ", b);
+				for (unsigned i = 0; i < ChainSizes[ChainIds[b]]; i++)
+					printf("%u ", Chains[ChainIds[b]][i]);
+				printf("\n");
+			}
+		}
+	}
+#endif
 }
 
 // apply the move on current position
@@ -116,8 +144,11 @@ void position::MakeMove(const move& m)
 	Hash ^= WhiteHash;
 
 	Coordinate[Board[m.orig]] = m.dest;
-	Board[m.dest] = Board[m.orig];
+	auto b = Board[m.orig];
 	Board[m.orig] = ' ';
+	Take(m.orig);
+	Board[m.dest] = b;
+	Place(m.dest);
 }
 
 // undo the move on current position
@@ -130,8 +161,11 @@ void position::UndoMove(const move& m)
 	Hash ^= Hashes[m.orig][WhiteTurn];
 
 	Coordinate[Board[m.dest]] = m.orig;
-	Board[m.orig] = Board[m.dest];
+	auto b = Board[m.dest];
 	Board[m.dest] = ' ';
+	Take(m.dest);
+	Board[m.orig] = b;
+	Place(m.orig);
 }
 
 // list all possible moves of current position
@@ -139,12 +173,6 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 {
 	move Naive[MaxBreadth];
 	unsigned MovesNo = 0;
-
-	unsigned ChainIds[81] = {};
-	unsigned LastChain = 1; // the 0th chain is not used
-	unsigned Chains[81];
-	unsigned ChainStarts[24] = {0, 0}; // I bet 23 chains are enough
-
 	unsigned start = WhiteTurn * 10;
 	for (unsigned i = start; i < start + 10; i++) {
 		const unsigned orig = Coordinate[i];
@@ -157,42 +185,16 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 			}
 		}
 		// then list the hop jumps
-		bool visited[81] = {};
+		bool Visited[81] = {};
 		for (unsigned k = 0; k < Next[orig].HopNo; k++) {
-			const unsigned adj = Next[orig].Adj[k];
-			const unsigned dest = Next[orig].Hop[k];
-			if (IsMarble(adj) && IsSpace(dest) && !visited[dest]) {
-				const unsigned ChainId = ChainIds[dest];
-				if (ChainId != 0) { // already in the chains
-					for (unsigned j = ChainStarts[ChainId];
-						j < ChainStarts[ChainId + 1]; j++) {
-						const unsigned c = Chains[j];
-						Naive[MovesNo++].Set(orig, c);
-						visited[c] = true;
-					}
-				}
-				else { // find the new chain
-					unsigned Rear = MovesNo; // prepare the queue of BFS
-					Naive[MovesNo++].Set(orig, dest);
-					visited[dest] = true;
-					ChainIds[dest] = LastChain;
-					unsigned ChainStart = ChainStarts[LastChain];
-					Chains[ChainStart++] = dest;
-					while (Rear != MovesNo) {
-						const unsigned mid = Naive[Rear++].dest;
-						for (unsigned k = 0; k < Next[mid].HopNo; k++) {
-							const unsigned adj = Next[mid].Adj[k];
-							const unsigned dest = Next[mid].Hop[k];
-							if (IsMarble(adj) && IsSpace(dest)
-								&& !visited[dest]) {
-								Naive[MovesNo++].Set(orig, dest);
-								visited[dest] = true;
-								ChainIds[dest] = LastChain;
-								Chains[ChainStart++] = dest;
-							}
-						}
-					}
-					ChainStarts[++LastChain] = ChainStart;
+			const unsigned Adj = Next[orig].Adj[k];
+			const unsigned Dest = Next[orig].Hop[k];
+			if (IsMarble(Adj) && IsSpace(Dest) && !Visited[Dest]) {
+				const unsigned ChainId = ChainIds[Dest];
+				for (unsigned j = 0; j < ChainSizes[ChainId]; j++) {
+					const unsigned c = Chains[ChainId][j];
+					Naive[MovesNo++].Set(orig, c);
+					Visited[c] = true;
 				}
 			}
 		}
@@ -233,4 +235,95 @@ bool position::operator==(const position & b) const
 		&& Score == b.Score
 		&& WhiteTurn == b.WhiteTurn
 		&& Board == b.Board;
+}
+
+// place a marble on cell b
+void position::Place(const unsigned b)
+{
+	for (unsigned k = 0; k < Next[b].ConjNo; k += 2) {
+		const unsigned Conj1 = Next[b].Conj[k];
+		const unsigned Conj2 = Next[b].Conj[k + 1];
+		if (IsSpace(Conj1) && IsSpace(Conj2))
+			Merge(Conj1, Conj2);
+	}
+
+	Split(b);
+}
+
+// take the marble from cell b
+void position::Take(const unsigned b)
+{
+	const unsigned ChainId = EmptyChainSlots[--EmptyChainNo];
+	ChainIds[b] = ChainId;
+	Chains[ChainId][0] = b;
+	ChainSizes[ChainId] = 1;
+
+	for (unsigned k = 0; k < Next[b].HopNo; k++) {
+		const unsigned Adj = Next[b].Adj[k];
+		const unsigned Dest = Next[b].Hop[k];
+		if (IsMarble(Adj) && IsSpace(Dest))
+			Merge(b, Dest);
+	}
+
+	for (unsigned k = 0; k < Next[b].ConjNo; k += 2) {
+		const unsigned Conj1 = Next[b].Conj[k];
+		const unsigned Conj2 = Next[b].Conj[k + 1];
+		if (IsSpace(Conj1) && IsSpace(Conj2))
+			Split(Conj1, false);
+	}
+}
+
+// merge the chains of c1 and c2
+void position::Merge(const unsigned c1, const unsigned c2)
+{
+	unsigned ChainId1 = ChainIds[c1];
+	unsigned ChainId2 = ChainIds[c2];
+	if (ChainId1 != ChainId2) { // ignore if already in the same chain
+		if (ChainSizes[ChainId1] > ChainSizes[ChainId2])
+			std::swap(ChainId1, ChainId2); // so that chain2 is shorter
+		std::copy(Chains[ChainId2],
+			Chains[ChainId2] + ChainSizes[ChainId2],
+			Chains[ChainId1] + ChainSizes[ChainId1]);
+		for (unsigned i = 0; i < ChainSizes[ChainId2]; i++)
+			ChainIds[Chains[ChainId2][i]] = ChainId1;
+		ChainSizes[ChainId1] += ChainSizes[ChainId2];
+		ChainSizes[ChainId2] = 0;
+		EmptyChainSlots[EmptyChainNo++] = ChainId2;
+	}
+}
+
+// split the chain of b, ignoring b itself or not
+void position::Split(const unsigned b, bool Ignoreb)
+{
+	const unsigned ChainId = ChainIds[b];
+	if (ChainSizes[ChainId] > 1) {
+		bool Visited[81] = {};
+		Visited[b] = Ignoreb;
+		for (unsigned i = 0; i < ChainSizes[ChainId]; i++) {
+			const unsigned c = Chains[ChainId][i];
+			if (Visited[c])
+				continue;
+			const unsigned EmptyChainId = EmptyChainSlots[--EmptyChainNo];
+			unsigned ChainSize = 0;
+			Chains[EmptyChainId][ChainSize++] = c;
+			Visited[c] = true;
+			unsigned Rear = 0;
+			ChainIds[c] = EmptyChainId;
+			while (Rear != ChainSize) {
+				const unsigned c = Chains[EmptyChainId][Rear++];
+				for (unsigned k = 0; k < Next[c].HopNo; k++) {
+					const unsigned Adj = Next[c].Adj[k];
+					const unsigned Dest = Next[c].Hop[k];
+					if (IsMarble(Adj) && IsSpace(Dest) && !Visited[Dest]) {
+						Chains[EmptyChainId][ChainSize++] = Dest;
+						Visited[Dest] = true;
+						ChainIds[Dest] = EmptyChainId;
+					}
+				}
+			}
+			ChainSizes[EmptyChainId] = ChainSize;
+		}
+	}
+	EmptyChainSlots[EmptyChainNo++] = ChainId;
+	ChainSizes[ChainId] = 0;
 }

@@ -1,6 +1,6 @@
 //========================================================================
 // move.hpp
-// 2012.9.8-2018.6.12
+// 2012.9.8-2018.6.16
 //========================================================================
 #pragma once
 
@@ -17,6 +17,8 @@ struct {
 	unsigned Adj[6]; // first with hops, then adj-only; thus AdjNo >= HopNo
 	unsigned HopNo;
 	unsigned Hop[6];
+	unsigned ConjNo;
+	unsigned Conj[6];
 } Next[81];
 
 // precompute the globals
@@ -24,11 +26,11 @@ void PreCompute()
 {
 	constexpr int offsets[6][2] = {
 		{ 0,-1 },//left
-		{ -1,0 },//up
-		{ 1,-1 },//down left
-		{ -1,1 },//up right
-		{ 1,0 },//down
 		{ 0,1 },//right
+		{ -1,0 },//up
+		{ 1,0 },//down
+		{ -1,1 },//up right
+		{ 1,-1 },//down left
 	};
 	WhiteHash.set(162);
 	for (unsigned b = 0; b < 81; b++) {
@@ -54,6 +56,18 @@ void PreCompute()
 		}
 		for (unsigned k = 0; k < AdjNo; k++) {
 			Next[b].Adj[Next[b].AdjNo++] = Adj[k];
+		}
+		for (unsigned k = 0; k < 6; k += 2) {
+			const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
+			const unsigned j2 = j + offsets[k][1];
+			if (i2 < 9 && j2 < 9) {
+				const unsigned i3 = i + offsets[k + 1][0];
+				const unsigned j3 = j + offsets[k + 1][1];
+				if (i3 < 9 && j3 < 9) {
+					Next[b].Conj[Next[b].ConjNo++] = i2 * 9 + j2;
+					Next[b].Conj[Next[b].ConjNo++] = i3 * 9 + j3;
+				}
+			}
 		}
 		Hashes[b][0].set(b * 2);
 		Hashes[b][1].set(b * 2 + 1);
