@@ -50,7 +50,8 @@ struct position{ // positon
 	void Place(const unsigned b);
 	void Take(const unsigned b);
 	void Merge(const unsigned c1, const unsigned c2);
-	void Split(const unsigned b, bool Ignoreb = true);
+	void Split(const unsigned b);
+	void Split2(const unsigned c1, const unsigned c2);
 };
 
 // set current position using inputs
@@ -129,6 +130,14 @@ void position::Print() const
 					printf("%u ", Chains[ChainIds[b]][i]);
 				printf("\n");
 			}
+			else {
+				const unsigned c = Chains[ChainIds[b]][0];
+				if (c != b) {
+					SetConsoleColor(Color::red);
+					printf("%u: %u\n", b, c);
+					SetConsoleColor(Color::white);
+				}
+			}
 		}
 	}
 #endif
@@ -147,8 +156,10 @@ void position::MakeMove(const move& m)
 	auto b = Board[m.orig];
 	Board[m.orig] = ' ';
 	Take(m.orig);
+	//Print();
 	Board[m.dest] = b;
 	Place(m.dest);
+	//Print();
 }
 
 // undo the move on current position
@@ -164,8 +175,10 @@ void position::UndoMove(const move& m)
 	auto b = Board[m.dest];
 	Board[m.dest] = ' ';
 	Take(m.dest);
+	//Print();
 	Board[m.orig] = b;
 	Place(m.orig);
+	//Print();
 }
 
 // list all possible moves of current position
@@ -269,7 +282,7 @@ void position::Take(const unsigned b)
 		const unsigned Conj1 = Next[b].Conj[k];
 		const unsigned Conj2 = Next[b].Conj[k + 1];
 		if (IsSpace(Conj1) && IsSpace(Conj2))
-			Split(Conj1, false);
+			Split2(Conj1, Conj2);
 	}
 }
 
@@ -292,13 +305,21 @@ void position::Merge(const unsigned c1, const unsigned c2)
 	}
 }
 
-// split the chain of b, ignoring b itself or not
-void position::Split(const unsigned b, bool Ignoreb)
+// split the chain of b, ignoring b itself
+void position::Split(const unsigned b)
 {
 	const unsigned ChainId = ChainIds[b];
-	if (ChainSizes[ChainId] > 1) {
+	if (ChainSizes[ChainId] == 1) {
+		EmptyChainSlots[EmptyChainNo++] = ChainId;
+		ChainSizes[ChainId] = 0;
+	}
+	else if (ChainSizes[ChainId] == 2) {
+		Chains[ChainId][0] = Chains[ChainId][0] + Chains[ChainId][1] - b;
+		ChainSizes[ChainId] = 1;
+	}
+	else {
 		bool Visited[81] = {};
-		Visited[b] = Ignoreb;
+		Visited[b] = true;
 		for (unsigned i = 0; i < ChainSizes[ChainId]; i++) {
 			const unsigned c = Chains[ChainId][i];
 			if (Visited[c])
@@ -323,7 +344,49 @@ void position::Split(const unsigned b, bool Ignoreb)
 			}
 			ChainSizes[EmptyChainId] = ChainSize;
 		}
+		EmptyChainSlots[EmptyChainNo++] = ChainId;
+		ChainSizes[ChainId] = 0;
 	}
-	EmptyChainSlots[EmptyChainNo++] = ChainId;
-	ChainSizes[ChainId] = 0;
+}
+
+
+void position::Split2(const unsigned c1, const unsigned c2)
+{
+	const unsigned ChainId = ChainIds[c1];
+	if (ChainSizes[ChainId] == 2) {
+		const unsigned EmptyChainId = EmptyChainSlots[--EmptyChainNo];
+		Chains[EmptyChainId][0] = Chains[ChainId][1];
+		ChainIds[Chains[ChainId][1]] = EmptyChainId;
+		ChainSizes[EmptyChainId] = 1;
+		ChainSizes[ChainId] = 1;
+	}
+	else {
+		bool Visited[81] = {};
+		const unsigned temp[2] = { c1, c2 };
+		for (auto c: temp) {
+			if (Visited[c])
+				continue;
+			const unsigned EmptyChainId = EmptyChainSlots[--EmptyChainNo];
+			unsigned ChainSize = 0;
+			Chains[EmptyChainId][ChainSize++] = c;
+			Visited[c] = true;
+			unsigned Rear = 0;
+			ChainIds[c] = EmptyChainId;
+			while (Rear != ChainSize) {
+				const unsigned c = Chains[EmptyChainId][Rear++];
+				for (unsigned k = 0; k < Next[c].HopNo; k++) {
+					const unsigned Adj = Next[c].Adj[k];
+					const unsigned Dest = Next[c].Hop[k];
+					if (IsMarble(Adj) && IsSpace(Dest) && !Visited[Dest]) {
+						Chains[EmptyChainId][ChainSize++] = Dest;
+						Visited[Dest] = true;
+						ChainIds[Dest] = EmptyChainId;
+					}
+				}
+			}
+			ChainSizes[EmptyChainId] = ChainSize;
+		}
+		EmptyChainSlots[EmptyChainNo++] = ChainId;
+		ChainSizes[ChainId] = 0;
+	}
 }
