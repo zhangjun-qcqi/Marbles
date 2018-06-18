@@ -1,6 +1,6 @@
 //========================================================================
 // color.hpp
-// 2018.3.29-2018.6.15
+// 2018.3.29-2018.6.18
 //========================================================================
 #pragma once
 
@@ -28,7 +28,7 @@ void SetConsoleColor(Color color)
 	switch(color){
 		case Color::red:
 #ifdef _WIN32
-			SetConsoleTextAttribute(hConsole, 10);
+			SetConsoleTextAttribute(hConsole, 12);
 #else
 			printf("\033[31m");
 #endif
@@ -36,7 +36,7 @@ void SetConsoleColor(Color color)
 				
 		case Color::green:
 #ifdef _WIN32
-			SetConsoleTextAttribute(hConsole, 12);
+			SetConsoleTextAttribute(hConsole, 10);
 #else
 			printf("\033[32m");
 #endif
