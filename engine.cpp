@@ -32,14 +32,21 @@ void Bench(const char* board, char player, const unsigned depths[],
 	const unsigned quiets[]);
 void PrepareQuietCache();
 
-int main()
+int main(int argc, char* argv[])
 {
 	PreCompute();
 	//setbuf(stdout, NULL);
 
-	//Play();
-	//Bench(easy, 'b', easyDepths, easyQuiets);
-	Bench(medium, 'b', mediumDepths, mediumQuiets);
+    if (argc <= 1) {
+        Play();
+    }
+    else {
+        //Bench(easy, 'b', easyDepths, easyQuiets);
+        if (strcmp(argv[1], "medium") == 0) {
+            Bench(medium, 'b', mediumDepths, mediumQuiets);
+        }
+    }
+
 }
 
 void PrepareQuietCache()
