@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2018.6.17
+// 2012.9.7-2019.8.26
 //========================================================================
 #pragma warning(disable:4996) // for stupid M$VC
 #include <cstdio>
@@ -95,9 +95,9 @@ void Play()
 
 	while(true){
 		unsigned n = Node.ListMoves(Moves);
-		char buf[20];
+		char buf[128];
 		int ch;
-		while(fgets(buf,20,stdin)!=0){
+		while(fgets(buf,sizeof(buf),stdin)!=0){
 			size_t len = strlen(buf);
 			if(buf[len-1]!='\n'){//current line not read all, dicard them
 				while ((ch = getc(stdin)) != EOF && ch != '\n');
@@ -114,10 +114,14 @@ void Play()
 					break;
 				}
 			}
-			else if(len==19 && buf[1]==':'){//Board
+			else if(len==84 && (buf[1]==':' || buf[1]=='|')) {//Board
 				if(Node.IsLegal(buf[0], buf + 2)){
 					Node.Set(buf[0], buf + 2);
-					break;
+                    Node.Print();
+                    if (buf[1] == ':')
+                        continue;
+                    else
+                        break;
 				}
 			}
 		}
