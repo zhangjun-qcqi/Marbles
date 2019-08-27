@@ -226,6 +226,13 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	// now count[i] = first index of i+1
 	for (int i = MovesNo - 1; i >= 0; i--)
 		Moves[--count[MoveScores[i]]] = Naive[i];
+    if (MovesNo >= 2 && Moves[0].Score() == Moves[1].Score()) {
+        if (Moves[1].orig * sign < Moves[0].orig * sign) {
+            move temp = Moves[0];
+            Moves[0] = Moves[1];
+            Moves[1] = temp;
+        }
+    }
 	return MovesNo;
 }
 
