@@ -118,8 +118,10 @@ void Play()
 				if(Node.IsLegal(buf[0], buf + 2)){
 					Node.Set(buf[0], buf + 2);
                     Node.Print();
-                    if (buf[1] == ':')
+                    if (buf[1] == ':') {
+                        n = Node.ListMoves(Moves);
                         continue;
+                    }
                     else
                         break;
 				}
