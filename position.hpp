@@ -95,8 +95,10 @@ void position::Print() const
 				SetConsoleColor(Color::green);
 			else if(b<20)
 				SetConsoleColor(Color::red);
-			printf("%02d  ", (i - j) * 9 + j);
-			SetConsoleColor(Color::white);
+			printf("%02d", (i - j) * 9 + j);
+            if (b < 20)
+                SetConsoleColor(Color::reset);
+            printf("  ");
 		}
 		printf("\n");
 	}

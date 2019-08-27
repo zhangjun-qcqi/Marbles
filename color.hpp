@@ -1,6 +1,6 @@
 //========================================================================
 // color.hpp
-// 2018.3.29-2018.6.18
+// 2018.3.29-2019.8.27
 //========================================================================
 #pragma once
 
@@ -14,7 +14,7 @@
 #endif
 
 enum class Color{
-	white,
+	reset,
 	red,
 	green
 };
@@ -42,12 +42,12 @@ void SetConsoleColor(Color color)
 #endif
 			break;
 
-		case Color::white:
+		case Color::reset:
 		default:
 #ifdef _WIN32
 			SetConsoleTextAttribute(hConsole, 15);
 #else
-			printf("\033[37m");
+			printf("\033[0m");
 #endif
 	}
 }
