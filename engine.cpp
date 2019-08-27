@@ -41,8 +41,10 @@ int main(int argc, char* argv[])
         Play();
     }
     else {
-        //Bench(easy, 'b', easyDepths, easyQuiets);
-        if (strcmp(argv[1], "medium") == 0) {
+		if (strcmp(argv[1], "easy") == 0) {
+			Bench(easy, 'b', easyDepths, easyQuiets);
+		}
+        else if (strcmp(argv[1], "medium") == 0) {
             Bench(medium, 'b', mediumDepths, mediumQuiets);
         }
     }
