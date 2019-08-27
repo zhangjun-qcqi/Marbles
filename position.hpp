@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2018.6.14
+// 2012.9.8-2019.8.27
 //========================================================================
 #pragma once
 
@@ -39,7 +39,7 @@ struct position{ // positon
 	void Print() const;
 	void MakeMove(const move& m);
 	void UndoMove(const move& m);
-	unsigned ListMoves(move Moves[MaxBreadth], const int bar = 0) const;
+	unsigned ListMoves(move Moves[MaxBreadth], const int bar = -16) const;
 	bool operator== (const position& b) const;
 	bool operator!= (const position& b) const { return !operator==(b);}
 };
