@@ -147,9 +147,21 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	unsigned Chains[81];
 	unsigned ChainStarts[24] = {0, 0}; // I bet 23 chains are enough
 
-	unsigned start = WhiteTurn * 10;
-	for (unsigned i = start; i < start + 10; i++) {
-		const unsigned orig = Coordinate[i];
+	// sort the Coordinate by distance first
+	std::array<unsigned, 10> SortedCoordinate;
+	if (WhiteTurn) {
+		std::copy(Coordinate.cbegin() + 10, Coordinate.cend(),
+			SortedCoordinate.begin());
+		std::sort(SortedCoordinate.begin(), SortedCoordinate.end(),
+			[](auto x, auto y) { return Scores[x] < Scores[y]; });
+	}
+	else {
+		std::copy(Coordinate.cbegin(), Coordinate.cbegin() + 10,
+			SortedCoordinate.begin());
+		std::sort(SortedCoordinate.begin(), SortedCoordinate.end(),
+			[](auto x, auto y) { return Scores[x] > Scores[y]; });
+	}
+	for (const auto orig : SortedCoordinate) {
 		if (bar < 2) { // only in quiescent search
 			// first list the adjacent moves
 			for (unsigned k = 0; k < Next[orig].AdjNo; k++) {
@@ -226,13 +238,6 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	// now count[i] = first index of i+1
 	for (int i = MovesNo - 1; i >= 0; i--)
 		Moves[--count[MoveScores[i]]] = Naive[i];
-    if (MovesNo >= 2 && Moves[0].Score() == Moves[1].Score()) {
-        if (Moves[1].orig * sign < Moves[0].orig * sign) {
-            move temp = Moves[0];
-            Moves[0] = Moves[1];
-            Moves[1] = temp;
-        }
-    }
 	return MovesNo;
 }
 
