@@ -6,6 +6,7 @@
     #pragma warning(disable:4996) // for stupid M$VC
 #endif
 #include <cstdio>
+#include <cinttypes>
 #include <cstring>
 #include <chrono>
 #include <algorithm>
@@ -77,8 +78,9 @@ void Bench(const char * board, char player, const unsigned depths[],
 	auto tstart = std::chrono::high_resolution_clock::now();
 	int a = AlphaBeta(Node, Move);
 	auto tend = std::chrono::high_resolution_clock::now();
-	printf("time = %lld ms\n", std::chrono::duration_cast<
-		std::chrono::milliseconds>(tend - tstart).count());
+    int64_t time = std::chrono::duration_cast<
+    std::chrono::milliseconds>(tend - tstart).count();
+	printf("time = %" PRId64 " ms\n", time);
 	printf("score = %d\n", a);
 	Move.Print();
 	printf("%d / %zu = %f\n", Usage, TTable.size(),
@@ -143,8 +145,9 @@ void Play()
 		}
 		int Utility = AlphaBeta(Node,Move);
 		auto tend = std::chrono::high_resolution_clock::now();
-		printf("time = %lld ms\n", std::chrono::duration_cast<
-			std::chrono::milliseconds>(tend - tstart).count());
+        int64_t time = std::chrono::duration_cast<
+        std::chrono::milliseconds>(tend - tstart).count();
+		printf("time = %" PRId64 " ms\n", time);
 		printf("score = %d\n", Utility);
 		auto OldSize = TTable.size();
 		printf("%d / %zu = %f\n", Usage, OldSize, (float)Usage / OldSize);
