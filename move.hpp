@@ -8,67 +8,57 @@
 #include <bitset>
 #include <climits>
 
+int Scores[81];
 typedef std::bitset<163> hash;
 hash Hashes[81][2];
 hash WhiteHash;
-struct Net {
+struct {
 	unsigned AdjNo;
 	unsigned Adj[6]; // first with hops, then adj-only; thus AdjNo >= HopNo
 	unsigned HopNo;
 	unsigned Hop[6];
-};
+} Next[81];
 
 // precompute the globals
 void PreCompute()
 {
+	constexpr int offsets[6][2] = {
+		{ 0,-1 },//left
+		{ -1,0 },//up
+		{ 1,-1 },//down left
+		{ -1,1 },//up right
+		{ 1,0 },//down
+		{ 0,1 },//right
+	};
 	WhiteHash.set(162);
 	for (unsigned b = 0; b < 81; b++) {
+		const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
+		const unsigned j = b % 9;
+		Scores[b] = 8 - (i + j);// based on white's view; middle line is 0
+		unsigned Adj[6];
+		unsigned AdjNo = 0;
+		for (unsigned k = 0; k < 6; k++) {
+			const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
+			const unsigned j2 = j + offsets[k][1];
+			if (i2 < 9 && j2 < 9) {
+				const unsigned i3 = i2 + offsets[k][0];
+				const unsigned j3 = j2 + offsets[k][1];
+				if (i3 < 9 && j3 < 9) {
+					Next[b].Adj[Next[b].AdjNo++] = i2 * 9 + j2;
+					Next[b].Hop[Next[b].HopNo++] = i3 * 9 + j3;
+				}
+				else {
+					Adj[AdjNo++] = i2 * 9 + j2;
+				}
+			}
+		}
+		for (unsigned k = 0; k < AdjNo; k++) {
+			Next[b].Adj[Next[b].AdjNo++] = Adj[k];
+		}
 		Hashes[b][0].set(b * 2);
 		Hashes[b][1].set(b * 2 + 1);
 	}
 }
-
-constexpr auto PreCompute2()
-{
-    std::array<int, 81> Scores = {};
-    std::array<Net, 81> Next = {};
-    constexpr int offsets[6][2] = {
-        { 0,-1 },//left
-        { -1,0 },//up
-        { 1,-1 },//down left
-        { -1,1 },//up right
-        { 1,0 },//down
-        { 0,1 },//right
-    };
-    for (unsigned b = 0; b < 81; b++) {
-        const unsigned i = b / 9;// Let's see if M$VC optimizes it to div
-        const unsigned j = b % 9;
-        Scores[b] = 8 - (i + j);// based on white's view; middle line is 0
-        unsigned Adj[6] = {};
-        unsigned AdjNo = 0;
-        for (unsigned k = 0; k < 6; k++) {
-            const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
-            const unsigned j2 = j + offsets[k][1];
-            if (i2 < 9 && j2 < 9) {
-                const unsigned i3 = i2 + offsets[k][0];
-                const unsigned j3 = j2 + offsets[k][1];
-                if (i3 < 9 && j3 < 9) {
-                    Next[b].Adj[Next[b].AdjNo++] = i2 * 9 + j2;
-                    Next[b].Hop[Next[b].HopNo++] = i3 * 9 + j3;
-                }
-                else {
-                    Adj[AdjNo++] = i2 * 9 + j2;
-                }
-            }
-        }
-        for (unsigned k = 0; k < AdjNo; k++) {
-            Next[b].Adj[Next[b].AdjNo++] = Adj[k];
-        }
-    }
-    return std::make_tuple(Scores, Next);
-}
-
-auto [Scores, Next] = PreCompute2();
 
 void hash2ulls(const hash& h, unsigned long long ulls[3])
 {
