@@ -77,7 +77,7 @@ void Bench(const char * board, char player, const unsigned depths[],
 	auto tstart = std::chrono::high_resolution_clock::now();
 	int a = AlphaBeta(Node, Move);
 	auto tend = std::chrono::high_resolution_clock::now();
-	printf("time = %lld ms\n", std::chrono::duration_cast<
+	printf("time = %lld ms\n", (long long) std::chrono::duration_cast<
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", a);
 	Move.Print();
@@ -143,7 +143,7 @@ void Play()
 		}
 		int Utility = AlphaBeta(Node,Move);
 		auto tend = std::chrono::high_resolution_clock::now();
-		printf("time = %lld ms\n", std::chrono::duration_cast<
+		printf("time = %lld ms\n", (long long) std::chrono::duration_cast<
 			std::chrono::milliseconds>(tend - tstart).count());
 		printf("score = %d\n", Utility);
 		auto OldSize = TTable.size();
