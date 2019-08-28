@@ -152,12 +152,14 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	if (WhiteTurn) {
 		std::copy(Coordinate.cbegin() + 10, Coordinate.cend(),
 			SortedCoordinate.begin());
+		if (bar < 4)
 		std::sort(SortedCoordinate.begin(), SortedCoordinate.end(),
 			[](auto x, auto y) { return Scores[x] < Scores[y]; });
 	}
 	else {
 		std::copy(Coordinate.cbegin(), Coordinate.cbegin() + 10,
 			SortedCoordinate.begin());
+		if (bar < 4)
 		std::sort(SortedCoordinate.begin(), SortedCoordinate.end(),
 			[](auto x, auto y) { return Scores[x] > Scores[y]; });
 	}
