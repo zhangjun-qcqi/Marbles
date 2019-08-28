@@ -1,5 +1,5 @@
 engine: engine.cpp color.hpp move.hpp position.hpp transposition.hpp
-	g++ -O2 -std=c++17 engine.cpp -o engine -DNDEBUG
+	g++ -O2 -std=c++17 engine.cpp -o engine -DNDEBUG -Wall -Wextra -pedantic
 
 run: engine
 	./engine

@@ -2,7 +2,9 @@
 // engine.cpp
 // 2012.9.7-2019.8.26
 //========================================================================
-#pragma warning(disable:4996) // for stupid M$VC
+#ifdef _MSC_VER
+    #pragma warning(disable:4996) // for stupid M$VC
+#endif
 #include <cstdio>
 #include <cstring>
 #include <chrono>
@@ -69,7 +71,7 @@ void Bench(const char * board, char player, const unsigned depths[],
 	PrepareQuietCache();
 
 	position Node;
-	Node.Set('b', board);
+	Node.Set(player, board);
 	Node.Print();
 	move Move;
 	auto tstart = std::chrono::high_resolution_clock::now();
