@@ -23,8 +23,8 @@ int BarCache[17]; // the bar of moves for each depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
-unsigned Usage; // how many times TTable has been effectively used
-unsigned Ply; // used to track Ages in TTable
+std::array<unsigned, 3> Usage; // how many times TTable has been used (with Age)
+unsigned Ply; // used to track ply for TTable's entry
 unsigned Rehash; // how many times TTable has been rehashed
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
@@ -50,7 +50,6 @@ int main(int argc, char* argv[])
             Bench(Medium);
         }
     }
-
 }
 
 // for each position, listed moves will have scores like
@@ -62,8 +61,8 @@ int main(int argc, char* argv[])
 // score = 1; humble move, useful for building ladders
 // score = 2; normal move, a plain hop
 // score >= 4; good move, chain-hopping, most prefered
-// the idea is the top nodes will search all the moves while the child nodes
-// will search lesser and lesser
+// the idea is the top nodes will search all the moves
+// while the nodes more near the leaves will search lesser
 void PrepareQuietCache()
 {
     constexpr int Bars[QuietDepths.size() + 1] = {-16, 1, 2, 4};
@@ -93,9 +92,12 @@ void Bench(config Config)
 		std::chrono::milliseconds>(tend - tstart).count());
 	printf("score = %d\n", Score);
 	Move.Print();
-	printf("%d / %zu = %f\n", Usage, TTable.size(),
-		float(Usage) / TTable.size());
-	printf("load factor = %f\n", TTable.load_factor());
+    int SumUsage = std::accumulate(Usage.cbegin(), Usage.cend(), 0);
+	printf("%d / %zu = %f\n", SumUsage, TTable.size(),
+		float(SumUsage) / TTable.size());
+    for (auto u: Usage)
+        printf("%d ", u);
+	printf("\nload factor = %f\n", TTable.load_factor());
 	printf("rehash = %d\n", Rehash);
 }
 
@@ -134,6 +136,9 @@ void Play()
 				if(Node.IsLegal(buf[0], buf + 2)){
 					Node.Set(buf[0], buf + 2);
                     Node.Print();
+                    TTable.clear();
+                    Ply = 0;
+                    Usage = {};
                     if (buf[1] == ':') {
                         n = Node.ListMoves(Moves);
                         continue;
@@ -159,12 +164,16 @@ void Play()
 			std::chrono::milliseconds>(tend - tstart).count());
 		printf("score = %d\n", Utility);
 		auto OldSize = TTable.size();
-		printf("%d / %zu = %f\n", Usage, OldSize, (float)Usage / OldSize);
+        int SumUsage = std::accumulate(Usage.cbegin(), Usage.cend(), 0);
+		printf("%d / %zu = %f\n", SumUsage, OldSize, (float)SumUsage / OldSize);
+        for (auto u: Usage)
+            printf("%d ", u);
+        printf("\n");
 		Move.Print();
 		Node.MakeMove(Move);
 		Node.Print();
 		for (auto it = TTable.begin(); it != TTable.end();) {
-			if (it->second.Age + 3 < Ply)
+			if (it->second.Ply + Usage.size() < Ply)
 				it = TTable.erase(it);
 			else
 				++it;
@@ -172,7 +181,7 @@ void Play()
 		auto NewSize = TTable.size();
 		printf("ply=%u, %zu erased, %zu remaining\n", Ply,
 			OldSize - NewSize, NewSize);
-		Usage = 0;
+		Usage = {};
 		Ply++;
 	}
 }
@@ -219,9 +228,9 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		&& TTable.count(Curr.Hash) != 0){
 		oldT = TTable[Curr.Hash];
 		hasOldT = true;
-		TTable[Curr.Hash].Age = Ply; // update age when access
+		TTable[Curr.Hash].Ply = Ply; // update ply when access
 		if(oldT.Depth <= Depth){
-			Usage++;
+			Usage[Ply - oldT.Ply]++;
 			Move = oldT.Move;
 			if(oldT.Lowerbound == oldT.Upperbound)
 				return oldT.Lowerbound;
@@ -293,7 +302,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 				printf(" > ");
 				newT.Print();
 				printf("\n");
-				TTable[Curr.Hash].Age = Ply;
+				TTable[Curr.Hash].Ply = Ply;
 			}
 		}
 		else {

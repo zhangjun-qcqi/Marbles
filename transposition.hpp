@@ -15,9 +15,9 @@ struct transposition{ // transposition
 	int Upperbound;
 	unsigned Depth;
     move Move; // the best move that has been found, otherwise NullMove
-	unsigned Age; // the last ply that the entry has been effectively used
+	unsigned Ply; // the last ply that the entry has been accessed
 
 	void Print() const {
-		printf("%u[%d %d]%u", Depth, Lowerbound, Upperbound, Age);
+		printf("%u[%d %d]%u", Depth, Lowerbound, Upperbound, Ply);
 	}
 };
