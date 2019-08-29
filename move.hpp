@@ -96,3 +96,14 @@ struct move{
 };
 
 move NullMove; // an illegal move to represent it is not a move
+
+// the counting sort is ascending, so better moves should have low rank
+// e.g. MoveScoreRanks[-16] = 18, MoveScoreRanks[0] = 9, MoveScoreRanks[16] = 0
+const int MSR[33] = {
+	18, -1, 17, -1, 16, -1, 15, -1, 14, -1, 13, -1, 12, -1, 11,
+	10, 9, 8,
+	7, -1, 6, -1, 5, -1, 4, -1, 3, -1, 2, -1, 1, -1, 0
+};
+const int* const MoveScoreRanks = MSR + 16; // score of move -> rank of score
+
+constexpr int Signs[] = { -1, 1 }; // black = -1; white = 1

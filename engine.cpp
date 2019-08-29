@@ -53,8 +53,8 @@ int main(int argc, char* argv[])
 }
 
 // for each position, listed moves will have scores like
-// 1, 2, 4, 8, 10, 12, 14, 16,
-//-1,-2,-4,-8,-10,-12,-14,-16, and 0
+// 1, 2, 4, 6, 8, 10, 12, 14, 16,
+//-1,-2,-4,-6,-8,-10,-12,-14,-16, and 0
 // not all moves need to be listed for analyzing
 // moves are categorized into 4 groups
 // score <=0; bad move, reasonable player won't do this
