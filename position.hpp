@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2019.8.27
+// 2012.9.8-2019.8.29
 //========================================================================
 #pragma once
 
@@ -11,11 +11,11 @@
 #include "move.hpp"
 #include "color.hpp"
 
-constexpr unsigned MaxBreadth = 250;
+constexpr unsigned MaxBreadth = 250; //real limit should be smaller
 
 struct position{ // positon
 	std::array<unsigned,81> Board; // also the inverted index for coordinates
-	std::array<unsigned,20> Coordinate; // coordinates for marbles; blacks 1st
+	std::array<unsigned,20> Coord; // coordinates for marbles; blacks 1st
 	bool WhiteTurn; // true if it is white's turn
 	std::array<int,2> Score; // scores for black and white
 	hash Hash; // Zobrist hashing
@@ -56,13 +56,13 @@ void position::Set(const char turn, const char board[])
 	for (unsigned b = 0; b<81; b++) {
 		if (board[b] == 'b') {
 			Board[b] = black;
-			Coordinate[black++] = b;
+			Coord[black++] = b;
 			Score[0] += Scores[b];
 			Hash ^= Hashes[b][0];
 		}
 		else if (board[b] == 'w') {
 			Board[b] = white;
-			Coordinate[white++] = b;
+			Coord[white++] = b;
 			Score[1] += Scores[b];
 			Hash ^= Hashes[b][1];
 		}
@@ -117,7 +117,7 @@ void position::MakeMove(const move& m)
 	WhiteTurn = !WhiteTurn;
 	Hash ^= WhiteHash;
 
-	Coordinate[Board[m.orig]] = m.dest;
+	Coord[Board[m.orig]] = m.dest;
 	Board[m.dest] = Board[m.orig];
 	Board[m.orig] = ' ';
 }
@@ -131,7 +131,7 @@ void position::UndoMove(const move& m)
 	Hash ^= Hashes[m.dest][WhiteTurn];
 	Hash ^= Hashes[m.orig][WhiteTurn];
 
-	Coordinate[Board[m.dest]] = m.orig;
+	Coord[Board[m.dest]] = m.orig;
 	Board[m.orig] = Board[m.dest];
 	Board[m.dest] = ' ';
 }
@@ -147,24 +147,24 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	unsigned Chains[81];
 	unsigned ChainStarts[24] = {0, 0}; // I bet 23 chains are enough
 
-	// sort the Coordinate by distance first
-	std::array<unsigned, 10> SortedCoordinate;
+    // sort the Coord by distance from home; the distant coord comes first
+    // since the counting sort later is stable, if two moves have the same
+    // score, then the move with distant orig will be listed first
+	std::array<unsigned, 10> SortedCoord;
 	if (WhiteTurn) {
-		std::copy(Coordinate.cbegin() + 10, Coordinate.cend(),
-			SortedCoordinate.begin());
-		if (bar < 4)
-		std::sort(SortedCoordinate.begin(), SortedCoordinate.end(),
-			[](auto x, auto y) { return Scores[x] < Scores[y]; });
+		std::copy(Coord.cbegin() + 10, Coord.cend(), SortedCoord.begin());
+        constexpr auto f = [](auto x, auto y) { return Scores[x] < Scores[y]; };
+        //if (bar < 4)
+        std::sort(SortedCoord.begin(), SortedCoord.end(), f);
 	}
 	else {
-		std::copy(Coordinate.cbegin(), Coordinate.cbegin() + 10,
-			SortedCoordinate.begin());
-		if (bar < 4)
-		std::sort(SortedCoordinate.begin(), SortedCoordinate.end(),
-			[](auto x, auto y) { return Scores[x] > Scores[y]; });
+		std::copy(Coord.cbegin(), Coord.cbegin() + 10, SortedCoord.begin());
+		//if (bar < 4)
+        constexpr auto f = [](auto x, auto y) { return Scores[x] > Scores[y]; };
+        std::sort(SortedCoord.begin(), SortedCoord.end(), f);
 	}
-	for (const auto orig : SortedCoordinate) {
-		if (bar < 2) { // only in quiescent search
+	for (const auto orig : SortedCoord) {
+		if (bar < 2) { // adjacent moves will never have >=2 score
 			// first list the adjacent moves
 			for (unsigned k = 0; k < Next[orig].AdjNo; k++) {
 				const unsigned dest = Next[orig].Adj[k];

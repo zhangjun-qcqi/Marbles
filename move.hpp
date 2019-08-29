@@ -1,6 +1,6 @@
 //========================================================================
 // move.hpp
-// 2012.9.8-2018.6.12
+// 2012.9.8-2019.8.29
 //========================================================================
 #pragma once
 
@@ -8,18 +8,20 @@
 #include <bitset>
 #include <climits>
 
-int Scores[81];
-typedef std::bitset<163> hash;
-hash Hashes[81][2];
-hash WhiteHash;
+int Scores[81]; //scores of each cell on the board, in white's view
+typedef std::bitset<163> hash; //type to represent Zobrist hashing
+hash Hashes[81][2]; //every cell should have independent hash for 2 players
+hash WhiteHash; //which turn to move also has independent hash
 struct {
 	unsigned AdjNo;
-	unsigned Adj[6]; // first with hops, then adj-only; thus AdjNo >= HopNo
+	unsigned Adj[6]; // hop-capable first, then adj-only; thus AdjNo >= HopNo
 	unsigned HopNo;
 	unsigned Hop[6];
-} Next[81];
+} Next[81]; //precomputed lookup table for each cell's moving capability
 
 // precompute the globals
+// ideally all of them can be computed at compile-time, but expriments shows
+// doing that doesn't yield noticable performance improvement
 void PreCompute()
 {
 	constexpr int offsets[6][2] = {
@@ -37,7 +39,7 @@ void PreCompute()
 		Scores[b] = 8 - (i + j);// based on white's view; middle line is 0
 		unsigned Adj[6];
 		unsigned AdjNo = 0;
-		for (unsigned k = 0; k < 6; k++) {
+		for (unsigned k = 0; k < 6; k++) {// generate hop-capable
 			const unsigned i2 = i + offsets[k][0];// note the unsigned wrap
 			const unsigned j2 = j + offsets[k][1];
 			if (i2 < 9 && j2 < 9) {
@@ -52,7 +54,7 @@ void PreCompute()
 				}
 			}
 		}
-		for (unsigned k = 0; k < AdjNo; k++) {
+		for (unsigned k = 0; k < AdjNo; k++) {// generate adj-only
 			Next[b].Adj[Next[b].AdjNo++] = Adj[k];
 		}
 		Hashes[b][0].set(b * 2);
@@ -93,4 +95,4 @@ struct move{
 	bool operator!=(const move& b) const { return !operator==(b); }
 };
 
-move NullMove;
+move NullMove; // an illegal move to represent it is not a move

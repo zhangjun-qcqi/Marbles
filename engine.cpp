@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2019.8.26
+// 2012.9.7-2019.8.29
 //========================================================================
 #ifdef _MSC_VER
     #pragma warning(disable:4996) // for stupid M$VC
@@ -9,29 +9,29 @@
 #include <cstring>
 #include <chrono>
 #include <algorithm>
+#include <array>
 #include <unordered_map>
 #include "position.hpp"
 #include "move.hpp"
 #include "transposition.hpp"
+#include "config.hpp"
 
 unsigned MaxDepth = 11; // max search depth
 unsigned LeafDepth = MaxDepth - 2; // ignore deeper transpositions
-unsigned QuietDepths[] = {2, 4, 6};
-constexpr int QuietLevels = sizeof(QuietDepths) / sizeof(QuietDepths[0]);
-int QuietCache[17];
+std::array<unsigned, 3> QuietDepths = {2, 4, 6};
+int BarCache[17]; // the bar of moves for each depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
-unsigned Usage;
-unsigned Ply;
-unsigned Rehash;
+unsigned Usage; // how many times TTable has been effectively used
+unsigned Ply; // used to track Ages in TTable
+unsigned Rehash; // how many times TTable has been rehashed
 
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo);
 int AlphaBeta(position& Node,move& Move);
 int NegaMax(unsigned Depth, int alpha, int beta, move& Move);
 void Play();
-void Bench(const char* board, char player, const unsigned depths[],
-	const unsigned quiets[]);
+void Bench(config Config);
 void PrepareQuietCache();
 
 int main(int argc, char* argv[])
@@ -44,42 +44,54 @@ int main(int argc, char* argv[])
     }
     else {
 		if (strcmp(argv[1], "easy") == 0) {
-			Bench(easy, 'b', easyDepths, easyQuiets);
+			Bench(Easy);
 		}
         else if (strcmp(argv[1], "medium") == 0) {
-            Bench(medium, 'b', mediumDepths, mediumQuiets);
+            Bench(Medium);
         }
     }
 
 }
 
+// for each position, listed moves will have scores like
+// 1, 2, 4, 8, 10, 12, 14, 16,
+//-1,-2,-4,-8,-10,-12,-14,-16, and 0
+// not all moves need to be listed for analyzing
+// moves are categorized into 4 groups
+// score <=0; bad move, reasonable player won't do this
+// score = 1; humble move, useful for building ladders
+// score = 2; normal move, a plain hop
+// score >= 4; good move, chain-hopping, most prefered
+// the idea is the top nodes will search all the moves while the child nodes
+// will search lesser and lesser
 void PrepareQuietCache()
 {
-    constexpr int Bars[QuietLevels + 1] = {-16, 1, 2, 4};
+    constexpr int Bars[QuietDepths.size() + 1] = {-16, 1, 2, 4};
 	for (unsigned d = 0; d < MaxDepth; d++) {
-		QuietCache[d] = Bars[std::lower_bound(QuietDepths,
-			QuietDepths + QuietLevels, d) - QuietDepths];
+        // lower_bound returns an iterator pointing to the first element
+        // in the range that is not less than the value
+		BarCache[d] = Bars[std::lower_bound(QuietDepths.cbegin(),
+			QuietDepths.cend(), d) - QuietDepths.cbegin()];
 	}
 }
 
-void Bench(const char * board, char player, const unsigned depths[],
-	const unsigned quiets[])
+void Bench(config Config)
 {
-	MaxDepth = depths[0];
-	LeafDepth = depths[1];
-	std::copy(quiets, quiets + QuietLevels, QuietDepths);
+	MaxDepth = Config.MaxDepth;
+	LeafDepth = Config.TTableDepth;
+    QuietDepths = Config.QuietDepths;
 	PrepareQuietCache();
 
 	position Node;
-	Node.Set(player, board);
+	Node.Set(Config.Player, Config.Board);
 	Node.Print();
 	move Move;
 	auto tstart = std::chrono::high_resolution_clock::now();
-	int a = AlphaBeta(Node, Move);
+	int Score = AlphaBeta(Node, Move);
 	auto tend = std::chrono::high_resolution_clock::now();
 	printf("time = %lld ms\n", (long long) std::chrono::duration_cast<
 		std::chrono::milliseconds>(tend - tstart).count());
-	printf("score = %d\n", a);
+	printf("score = %d\n", Score);
 	Move.Print();
 	printf("%d / %zu = %f\n", Usage, TTable.size(),
 		float(Usage) / TTable.size());
@@ -168,8 +180,8 @@ void Play()
 int CutoffTest(unsigned Depth, move Moves[MaxBreadth], unsigned& MovesNo)
 {
 	if (Depth < MaxDepth && Curr.Score[0] != -Win && Curr.Score[1] != Win) {
-		// normal or quiescent search
-		MovesNo = Curr.ListMoves(Moves, QuietCache[Depth]);
+		// normal or quiescence search
+		MovesNo = Curr.ListMoves(Moves, BarCache[Depth]);
 		if(MovesNo != 0) // noisy position
 			return -NoCutOff;
 	}
