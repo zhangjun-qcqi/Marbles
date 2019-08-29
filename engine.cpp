@@ -23,7 +23,7 @@ int BarCache[17]; // the bar of moves for each depth
 constexpr int Win = 60; // 8 + 7 * 2 + 6 * 3 + 5 * 4
 position Curr; // current position
 std::unordered_map<hash, transposition> TTable; // transposition table
-std::array<unsigned, 3> Usage; // how many times TTable has been used (with Age)
+std::array<unsigned, 9> Usage; // how many times TTable has been used (by depth)
 unsigned Ply; // used to track ply for TTable's entry
 unsigned Rehash; // how many times TTable has been rehashed
 
@@ -173,7 +173,8 @@ void Play()
 		Node.MakeMove(Move);
 		Node.Print();
 		for (auto it = TTable.begin(); it != TTable.end();) {
-			if (it->second.Ply + Usage.size() < Ply)
+            // statistics shows that entry older than 3 plies are seldom used
+			if (it->second.Ply + 3 < Ply)
 				it = TTable.erase(it);
 			else
 				++it;
@@ -230,7 +231,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 		hasOldT = true;
 		TTable[Curr.Hash].Ply = Ply; // update ply when access
 		if(oldT.Depth <= Depth){
-			Usage[Ply - oldT.Ply]++;
+			Usage[Depth]++;
 			Move = oldT.Move;
 			if(oldT.Lowerbound == oldT.Upperbound)
 				return oldT.Lowerbound;
