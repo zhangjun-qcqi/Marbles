@@ -154,12 +154,10 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	if (WhiteTurn) {
 		std::copy(Coord.cbegin() + 10, Coord.cend(), SortedCoord.begin());
         constexpr auto f = [](auto x, auto y) { return Scores[x] < Scores[y]; };
-        //if (bar < 4)
         std::sort(SortedCoord.begin(), SortedCoord.end(), f);
 	}
 	else {
 		std::copy(Coord.cbegin(), Coord.cbegin() + 10, SortedCoord.begin());
-		//if (bar < 4)
         constexpr auto f = [](auto x, auto y) { return Scores[x] > Scores[y]; };
         std::sort(SortedCoord.begin(), SortedCoord.end(), f);
 	}
@@ -221,12 +219,12 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 
 	int MoveScores[MaxBreadth];
 	unsigned j = 0;
-	const int sign = WhiteTurn ? -1 : 1;
+	const int NegatedSign = WhiteTurn ? -1 : 1;
 	for (unsigned i = 0; i < MovesNo; i++) {
-		const int s = Naive[i].Score() * sign;
-		if (s <= -bar) { // drop <bar moves for white; >-bar moves for black
+		const int NegatedScore = Naive[i].Score() * NegatedSign;
+		if (NegatedScore <= -bar) { // Score >= bar
 			Naive[j] = Naive[i];
-			MoveScores[j++] = s + 16; // shift the scores to be all >= 0
+			MoveScores[j++] = NegatedScore + 16; // make all scores >= 0
 		}
 	}
 	MovesNo = j;
