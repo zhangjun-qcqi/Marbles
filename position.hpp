@@ -217,6 +217,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 		getchar();
 	}
 
+	// scores are negated scores because the counting sort below is ascending
 	int MoveScores[MaxBreadth];
 	unsigned j = 0;
 	const int NegatedSign = WhiteTurn ? -1 : 1;
