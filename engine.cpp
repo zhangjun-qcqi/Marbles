@@ -96,8 +96,8 @@ void Bench(config Config)
     int SumUsage = std::accumulate(Usage.cbegin(), Usage.cend(), 0);
 	printf("%d / %zu = %f\n", SumUsage, TTable.size(),
 		float(SumUsage) / TTable.size());
-    for (auto u: Usage)
-        printf("%d ", u);
+	for (unsigned i = 0; i < MaxDepth; i++)
+		printf("%d ", Usage[i]);
 	printf("\nload factor = %f\n", TTable.load_factor());
 	printf("rehash = %d\n", Rehash);
 }
@@ -167,8 +167,8 @@ void Play()
 		auto OldSize = TTable.size();
         int SumUsage = std::accumulate(Usage.cbegin(), Usage.cend(), 0);
 		printf("%d / %zu = %f\n", SumUsage, OldSize, (float)SumUsage / OldSize);
-        for (auto u: Usage)
-            printf("%d ", u);
+		for (unsigned i = 0; i < MaxDepth; i++)
+            printf("%d ", Usage[i]);
         printf("\n");
 		Move.Print();
 		Node.MakeMove(Move);
