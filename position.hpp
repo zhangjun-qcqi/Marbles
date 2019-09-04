@@ -1,6 +1,6 @@
 //========================================================================
 // position.hpp
-// 2012.9.8-2019.8.29
+// 2012.9.8-2019.9.4
 //========================================================================
 #pragma once
 
@@ -142,9 +142,9 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 	move Naive[MaxBreadth];
 	unsigned MovesNo = 0;
 
-	unsigned ChainIds[81] = {};
+	unsigned ChainIds[81] = {}; // the id of the chain each cell belongs to
 	unsigned LastChain = 1; // the 0th chain is not used
-	unsigned Chains[81];
+	unsigned Chains[81]; // all the chains; chain i starts from ChainStarts[i]
 	unsigned ChainStarts[24] = {0, 0}; // I bet 23 chains are enough
 
     // sort the Coord by distance from home; the distant coord comes first
@@ -217,7 +217,7 @@ unsigned position::ListMoves(move Moves[MaxBreadth], const int bar) const
 		getchar();
 	}
 
-	// scores are negated scores because the counting sort below is ascending
+	// scores are negated because the counting sort below is ascending
 	int MoveScores[MaxBreadth];
 	unsigned j = 0;
 	const int NegatedSign = WhiteTurn ? -1 : 1;

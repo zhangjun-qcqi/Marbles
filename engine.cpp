@@ -1,6 +1,6 @@
 //========================================================================
 // engine.cpp
-// 2012.9.7-2019.8.29
+// 2012.9.7-2019.9.3
 //========================================================================
 #ifdef _MSC_VER
     #pragma warning(disable:4996) // for stupid M$VC
@@ -301,7 +301,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			else if (Depth < oldT.Depth) {
 				TTable[Curr.Hash] = newT;
 			}
-			else { // shallower score vs deeper score, which is better?
+			else { // the new scores involve less nodes; drop them
 				oldT.Print();
 				printf(" > ");
 				newT.Print();
@@ -315,7 +315,7 @@ int NegaMax(unsigned Depth, int alpha, int beta, move& Move)
 			const auto NewBucket = TTable.bucket_count();
 			if (OldBucket != NewBucket) {
 				Rehash++;
-				printf("rehash %u: %zu > %zu\n", Rehash, OldBucket, NewBucket);
+				printf("rehash %u: %zu -> %zu\n", Rehash, OldBucket, NewBucket);
 			}
 		}
 	}
